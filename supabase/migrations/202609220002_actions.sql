@@ -1,5 +1,5 @@
-create function private.require(ok boolean, message text default 'This action is not allowed') returns void language plpgsql set search_path='' as $$ begin if not coalesce(ok,false) then raise exception '%',message using errcode='42501'; end if; end $$;
-create function public.apply_action(p_org uuid,p_action jsonb) returns void language plpgsql security definer set search_path='' as $$
+create or replace function private.require(ok boolean, message text default 'This action is not allowed') returns void language plpgsql set search_path='' as $$ begin if not coalesce(ok,false) then raise exception '%',message using errcode='42501'; end if; end $$;
+create or replace function public.apply_action(p_org uuid,p_action jsonb) returns void language plpgsql security definer set search_path='' as $$
 declare
  t text := p_action->>'type'; d jsonb; c uuid; target uuid; l public.lessons; a public.assignments; s public.submissions; b jsonb; pair record; old_role text;
 begin
@@ -17,7 +17,7 @@ begin
   when 'session' then
    d:=p_action->'session'; c:=(d->>'courseId')::uuid;
    perform private.require(private.can_course(p_org,c,true) and private.feature(p_org,'live') and (d->>'orgId')::uuid=p_org);
-   insert into public.sessions(id,"orgId","courseId",title,date,time,"startsAt",duration) values((d->>'id')::uuid,p_org,c,trim(d->>'title'),(d->>'date')::date,(d->>'time')::time,(d->>'startsAt')::timestamptz,(d->>'duration')::int);
+   insert into public.sessions(id,"orgId","courseId",title,date,time,"startsAt",duration,"gmeetLink") values((d->>'id')::uuid,p_org,c,trim(d->>'title'),(d->>'date')::date,(d->>'time')::time,(d->>'startsAt')::timestamptz,(d->>'duration')::int,d->>'gmeetLink');
   when 'lesson' then
    d:=p_action->'lesson'; c:=(d->>'courseId')::uuid;
    perform private.require(private.can_course(p_org,c,true) and private.feature(p_org,'recordings') and (d->>'orgId')::uuid=p_org);

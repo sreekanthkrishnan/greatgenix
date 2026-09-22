@@ -35,6 +35,8 @@ export type Action =
   | { type: "report"; lessonId: string; reason: string }
   | { type: "enroll"; courseId: string; studentId: string; enrolled: boolean }
   | { type: "assign-teacher"; courseId: string; teacherId: string }
+  | { type: "delete-course"; id: string }
+  | { type: "delete-session"; id: string }
   | {
       type: "membership";
       userId: string;

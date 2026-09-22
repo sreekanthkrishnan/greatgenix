@@ -20,16 +20,12 @@ import {
 } from "../../../shared/components";
 import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
-import { mediaGateway } from "../../../shared/lib/video-adapters";
 import { available } from "../../../shared/types";
 
 export function Sessions({ id }: { id?: string }) {
   const { state, viewer } = useWorkspace();
   const { sessions, teacher } = useScope();
   const [form, setForm] = useState(false);
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [room, setRoom] = useState("");
   if (!available(state, viewer, "live")) return <Unavailable />;
   const session = id ? sessions.find((s) => s.id === id) : undefined;
   if (id && !session)
@@ -39,19 +35,30 @@ export function Sessions({ id }: { id?: string }) {
         text="It may belong to another classroom or organization."
       />
     );
-  async function join() {
-    setBusy(true);
-    try {
-      const result = await mediaGateway.joinSession(id!);
-      const url = new URL(result.roomUrl);
-      url.searchParams.set("t", result.token);
-      setRoom(url.toString());
-    } catch (error) {
-      setMessage((error as Error).message);
-    } finally {
-      setBusy(false);
+  const meetingUrl = session?.meetingUrl || session?.gmeetLink || "https://meet.google.com";
+
+  function getPlatformInfo(url: string) {
+    if (url.includes("zoom.us")) {
+      return { name: "Zoom", label: "Join Zoom Meeting", badge: "ZOOM LIVE" };
     }
+    if (url.includes("teams.microsoft.com") || url.includes("teams.live.com")) {
+      return { name: "Microsoft Teams", label: "Join Teams Meeting", badge: "TEAMS LIVE" };
+    }
+    if (url.includes("webex.com")) {
+      return { name: "Webex", label: "Join Webex Meeting", badge: "WEBEX LIVE" };
+    }
+    if (url.includes("meet.google.com")) {
+      return { name: "Google Meet", label: "Join Google Meet", badge: "GOOGLE MEET LIVE" };
+    }
+    return { name: "Live Class", label: "Join Live Class", badge: "LIVE MEETING" };
   }
+
+  const platform = getPlatformInfo(meetingUrl);
+
+  function join() {
+    window.open(meetingUrl, "_blank", "noopener,noreferrer");
+  }
+
   if (session) {
     const course = state.courses.find((c) => c.id === session.courseId)!;
     return (
@@ -65,23 +72,12 @@ export function Sessions({ id }: { id?: string }) {
           description={`${course.subject} · ${course.grade} · ${course.batch}`}
         />
         <div className="live-room">
-          {room ? (
-            <div className="media-player">
-              <iframe
-                src={room}
-                title="Live classroom"
-                allow="camera; microphone; fullscreen; display-capture"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-          ) : (
-            <div className="live-room-art">
-              <Video size={48} />
-              <h2>A classroom, wherever you are.</h2>
-              <p>Your private classroom opens when you join.</p>
-              <Badge tone="light">PRIVATE CLASSROOM</Badge>
-            </div>
-          )}
+          <div className="live-room-art">
+            <Video size={48} />
+            <h2>{`Interactive ${platform.name} Classroom`}</h2>
+            <p>{`Attend live interactive sessions directly via ${platform.name}.`}</p>
+            <Badge tone="light">{platform.badge}</Badge>
+          </div>
           <div className="live-room-details">
             <h3>Before we begin</h3>
             <div className="detail-row">
@@ -98,23 +94,25 @@ export function Sessions({ id }: { id?: string }) {
               <Users size={18} />
               <span>{course.studentIds.length} enrolled learners</span>
             </div>
+            <div className="detail-row">
+              <Video size={18} />
+              <a
+                href={meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-link"
+              >
+                {meetingUrl}
+              </a>
+            </div>
             <p className="muted">
-              Times follow your browser’s local time zone. Joining opens the
-              classroom and may request camera and microphone access.
+              Times follow your browser’s local time zone. Clicking join opens
+              the meeting link in a new tab.
             </p>
-            <Button onClick={join} disabled={busy}>
+            <Button onClick={join}>
               <Video size={17} />
-              {busy
-                ? "Checking…"
-                : teacher
-                  ? "Start / join class"
-                  : "Join class"}
+              {teacher ? `Start / ${platform.label}` : platform.label}
             </Button>
-            {message && (
-              <div className="inline-error" role="status">
-                {message}
-              </div>
-            )}
             <a className="text-link" href={`#/courses/${course.id}`}>
               Visit course <ArrowUpRight size={15} />
             </a>
@@ -139,8 +137,7 @@ export function Sessions({ id }: { id?: string }) {
         }
       />
       <Notice>
-        Private rooms are available from 15 minutes before class until 30
-        minutes after its scheduled end.
+        Live classes support any video conferencing link (Google Meet, Zoom, MS Teams, etc.).
       </Notice>
       <div className="schedule-list">
         {sessions.map((s) => (

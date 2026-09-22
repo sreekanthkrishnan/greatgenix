@@ -13,8 +13,10 @@ export function mutate(orgId: string, action: Action) {
     case "course":
     case "enroll":
     case "assign-teacher":
+    case "delete-course":
       return save0(orgId, action);
     case "session":
+    case "delete-session":
       return save1(orgId, action);
     case "lesson":
     case "lesson-status":

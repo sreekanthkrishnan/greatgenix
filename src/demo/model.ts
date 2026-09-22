@@ -52,6 +52,7 @@ export type Session = {
   date: string;
   time: string;
   duration: number;
+  gmeetLink?: string;
 };
 export type Assignment = {
   id: string;
@@ -319,6 +320,7 @@ export function makeSeed(): DemoState {
         date: localDate(),
         time: "16:00",
         duration: 60,
+        gmeetLink: "https://meet.google.com/ggx-math-live",
       },
       {
         id: "s2",
@@ -328,6 +330,7 @@ export function makeSeed(): DemoState {
         date: localDate(1),
         time: "10:00",
         duration: 45,
+        gmeetLink: "https://meet.google.com/ggx-sci-live",
       },
       {
         id: "s3",
@@ -337,6 +340,7 @@ export function makeSeed(): DemoState {
         date: localDate(2),
         time: "14:00",
         duration: 45,
+        gmeetLink: "https://meet.google.com/ggx-eng-live",
       },
       {
         id: "cs1",
@@ -346,6 +350,7 @@ export function makeSeed(): DemoState {
         date: localDate(1),
         time: "11:00",
         duration: 45,
+        gmeetLink: "https://meet.google.com/cdr-math-live",
       },
     ],
     assignments: [

@@ -65,21 +65,29 @@ export function ActionForm({
           });
           break;
         case "session":
-          ok = await act({
-            type: "session",
-            session: {
-              id,
-              orgId: viewer.orgId,
-              courseId: value("course"),
-              title: value("title"),
-              date: value("date"),
-              time: value("time"),
-              startsAt: new Date(
-                `${value("date")}T${value("time")}`,
-              ).toISOString(),
-              duration: Number(value("duration")),
-            },
-          });
+          {
+            const cleanTitle = value("title").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 9);
+            const defaultMeetCode = `${cleanTitle.slice(0, 3) || "ggx"}-${cleanTitle.slice(3, 6) || "mtg"}-${cleanTitle.slice(6, 9) || "live"}`;
+            const pastedLink = value("gmeetLink") || value("meetingUrl");
+            const meetingUrl = pastedLink || `https://meet.google.com/${defaultMeetCode}`;
+            ok = await act({
+              type: "session",
+              session: {
+                id,
+                orgId: viewer.orgId,
+                courseId: value("course"),
+                title: value("title"),
+                date: value("date"),
+                time: value("time"),
+                startsAt: new Date(
+                  `${value("date")}T${value("time")}`,
+                ).toISOString(),
+                duration: Number(value("duration")),
+                gmeetLink: meetingUrl,
+                meetingUrl,
+              },
+            });
+          }
           break;
         case "recording":
           ok = await act({
@@ -214,9 +222,15 @@ export function ActionForm({
                 defaultValue={60}
               />
             </Field>
+            <Field label="Meeting link (Google Meet, Zoom, Teams, etc.)">
+              <input
+                name="gmeetLink"
+                type="url"
+                placeholder="https://meet.google.com/xxx-yyyy-zzz or https://zoom.us/j/..."
+              />
+            </Field>
             <Notice>
-              The session uses a private Daily room. A configured provider is
-              required to join.
+              Paste any video conferencing link (Google Meet, Zoom, MS Teams, etc.). A default meeting link will be provided if left blank.
             </Notice>
           </>
         )}

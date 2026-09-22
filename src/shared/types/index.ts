@@ -66,6 +66,8 @@ export type Session = {
   date: string;
   time: string;
   duration: number;
+  gmeetLink?: string;
+  meetingUrl?: string;
 };
 export type Assignment = {
   id: string;
