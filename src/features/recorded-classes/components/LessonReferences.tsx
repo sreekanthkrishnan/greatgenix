@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  ExternalLink,
-  FileText,
-  StickyNote,
-  Play,
-  Volume2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type {
   Lesson,
   LessonReference,
@@ -15,6 +7,7 @@ import type {
 } from "../../../shared/types";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
 import { Button, Field, Modal } from "../../../shared/components";
+import { LessonArtwork } from "./LessonArtwork";
 import { ResourceViewer } from "./ResourceViewer";
 
 const labels = {
@@ -33,17 +26,10 @@ export function MaterialThumbnail({
   title?: string;
   fileName?: string;
 }) {
-  const Icon = {
-    video: Play,
-    audio: Volume2,
-    document: FileText,
-    link: ExternalLink,
-    notes: StickyNote,
-  }[type];
   const extension = fileName?.split(".").pop()?.toUpperCase();
   return (
     <div className={`material-thumbnail material-${type}`} aria-hidden="true">
-      <Icon size={32} strokeWidth={1.5} />
+      <LessonArtwork type={type} />
       <span>{type === "document" && extension ? extension : labels[type]}</span>
       {title && <small>{title}</small>}
     </div>
