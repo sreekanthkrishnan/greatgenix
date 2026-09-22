@@ -10,7 +10,8 @@ export const save = (
         | "lesson-status"
         | "lesson-reference"
         | "remove-lesson-reference"
-        | "complete";
+        | "complete"
+        | "delete-lesson";
     }
   >,
 ) => rpc("apply_action", { p_org: orgId, p_action: action });

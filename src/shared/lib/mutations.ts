@@ -23,6 +23,7 @@ export function mutate(orgId: string, action: Action) {
     case "lesson-reference":
     case "remove-lesson-reference":
     case "complete":
+    case "delete-lesson":
       return save2(orgId, action);
     case "assignment":
     case "submit":

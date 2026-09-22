@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
@@ -15,12 +16,13 @@ import {
   Button,
   CheckLabel,
   Empty,
+  Modal,
   PageHeading,
   Unavailable,
 } from "../../../shared/components";
 import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
-import { available } from "../../../shared/types";
+import { available, canAdmin } from "../../../shared/types";
 import { ResourceViewer } from "./ResourceViewer";
 import { LessonArtwork } from "./LessonArtwork";
 import { LessonReferences, MaterialThumbnail } from "./LessonReferences";
@@ -35,10 +37,14 @@ export function Recordings({ id }: { id?: string }) {
   const [form, setForm] = useState(false);
   const [report, setReport] = useState(false);
   const [reviewed, setReviewed] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   useEffect(() => {
     setReviewed(false);
     setReport(false);
+    setConfirmDelete(false);
   }, [id]);
+
   if (!available(state, viewer, "recordings")) return <Unavailable />;
   const lesson = id ? lessons.find((l) => l.id === id) : undefined;
   if (id && !lesson)
@@ -50,6 +56,22 @@ export function Recordings({ id }: { id?: string }) {
     );
   if (lesson) {
     const course = state.courses.find((c) => c.id === lesson.courseId)!;
+    const canDeleteLesson =
+      teacher &&
+      (canAdmin(viewer.role) || course?.teacherId === viewer.userId);
+
+    async function handleDeleteLesson() {
+      if (!lesson) return;
+      const ok = await act(
+        { type: "delete-lesson", id: lesson.id },
+        "Lesson deleted successfully.",
+      );
+      if (ok) {
+        setConfirmDelete(false);
+        window.location.hash = "#/recordings";
+      }
+    }
+
     return (
       <>
         <a className="back-link" href="#/recordings">
@@ -176,6 +198,16 @@ export function Recordings({ id }: { id?: string }) {
                     </Button>
                   </>
                 )}
+                {canDeleteLesson && (
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 size={16} />
+                    Delete lesson
+                  </Button>
+                )}
               </>
             ) : (
               <>
@@ -195,6 +227,25 @@ export function Recordings({ id }: { id?: string }) {
             )}
           </aside>
         </div>
+        {confirmDelete && (
+          <Modal
+            title="Delete Lesson?"
+            description="This will permanently delete this lesson and remove all associated references, reports, and progress records."
+            close={() => setConfirmDelete(false)}
+          >
+            <div className="modal-actions">
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmDelete(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleDeleteLesson} disabled={busy}>
+                Delete
+              </Button>
+            </div>
+          </Modal>
+        )}
         {report && (
           <ActionForm
             kind="report"

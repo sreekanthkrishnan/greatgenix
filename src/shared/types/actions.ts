@@ -40,6 +40,7 @@ export type Action =
   | { type: "assign-teacher"; courseId: string; teacherId: string }
   | { type: "delete-course"; id: string }
   | { type: "delete-session"; id: string }
+  | { type: "delete-lesson"; id: string }
   | {
       type: "membership";
       userId: string;
