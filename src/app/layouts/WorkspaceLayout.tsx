@@ -1,3 +1,4 @@
+import { Link, NavLink } from "react-router-dom";
 import { ProfileMenu } from "../../shared/components/ProfileMenu";
 import { useAuth } from "../providers/AuthProvider";
 import {
@@ -109,9 +110,9 @@ export function WorkspaceLayout() {
   return (
     <div className="app production-app">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <a
+        <Link
           className="brand"
-          href={platform ? "#/organizations" : "#/dashboard"}
+          to={platform ? "/organizations" : "/dashboard"}
         >
           {branding.logoUrl ? (
             <img
@@ -128,7 +129,7 @@ export function WorkspaceLayout() {
             {org.name}
             <small>{branding.tagline}</small>
           </span>
-        </a>
+        </Link>
         <button
           className="mobile-close icon-button"
           aria-label="Close navigation"
@@ -140,15 +141,14 @@ export function WorkspaceLayout() {
         {/* <span className="nav-caption">{copy.workspace.toUpperCase()}</span> */}
         <nav aria-label="Main navigation">
           {nav.map((n) => (
-            <a
+            <NavLink
               key={n.id}
-              className={route.split("/")[0] === n.id ? "active" : ""}
-              aria-current={route.split("/")[0] === n.id ? "page" : undefined}
-              href={`#/${n.id}`}
+              className={({ isActive }) => (isActive ? "active" : "")}
+              to={`/${n.id}`}
             >
               <n.icon size={19} />
               <span>{n.label}</span>
-            </a>
+            </NavLink>
           ))}
         </nav>
         <div className="sidebar-bottom">

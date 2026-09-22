@@ -4,7 +4,10 @@ import { OrgContextProvider } from "./app/providers/OrgContextProvider";
 import { AuthScreen } from "./features/auth/components/AuthScreen";
 import { WorkspaceLayout } from "./app/layouts/WorkspaceLayout";
 import { lazy, Suspense } from "react";
+import { HashRouter } from "react-router-dom";
+
 const DemoApp = lazy(() => import("./demo/App"));
+
 function Application() {
   const { session, loading, recovery } = useAuth();
   if (loading)
@@ -20,6 +23,7 @@ function Application() {
     </OrgContextProvider>
   );
 }
+
 export default function App() {
   if (new URLSearchParams(location.search).get("demo") === "1")
     return (
@@ -32,8 +36,11 @@ export default function App() {
   return (
     <QueryClientProvider>
       <AuthProvider>
-        <Application />
+        <HashRouter>
+          <Application />
+        </HashRouter>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+

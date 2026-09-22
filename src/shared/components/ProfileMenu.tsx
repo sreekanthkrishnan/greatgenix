@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useId, useRef, useState } from "react";
 import { UserRound, Building2, ShieldCheck, Check } from "lucide-react";
 import { Avatar } from "./index";
@@ -73,9 +74,9 @@ export function ProfileMenu({
             <small>{role}</small>
           </div>
           <nav aria-label="Account">
-            <a
+            <Link
               ref={link}
-              href="#/profile"
+              to="/profile"
               aria-current={
                 route.split("/")[0] === "profile" ? "page" : undefined
               }
@@ -86,7 +87,7 @@ export function ProfileMenu({
             >
               <UserRound size={17} />
               My profile
-            </a>
+            </Link>
           </nav>
           {workspaces.length > 1 && (
             <div className="workspace-switcher" aria-label="Switch workspace">

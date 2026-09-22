@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   createContext,
   useContext,
@@ -41,6 +42,9 @@ const empty: WorkspaceState = {
 };
 export function OrgContextProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const path = location.pathname;
   const userId = session!.user.id;
   const access = useQuery({
     queryKey: ["access", userId],
@@ -56,18 +60,15 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     }
   });
   const [platformRoute, setPlatformRoute] = useState(
-    location.hash.startsWith("#/organizations") ||
-      ((!location.hash || location.hash.startsWith("#/profile")) &&
+    path.startsWith("/organizations") ||
+      ((!path || path === "/" || path.startsWith("/profile")) &&
         preference.platform === true),
   );
   useEffect(() => {
-    const update = () => {
-      if (!location.hash.startsWith("#/profile"))
-        setPlatformRoute(location.hash.startsWith("#/organizations"));
-    };
-    window.addEventListener("hashchange", update);
-    return () => window.removeEventListener("hashchange", update);
-  }, []);
+    if (!path.startsWith("/profile")) {
+      setPlatformRoute(path.startsWith("/organizations"));
+    }
+  }, [path]);
   const [selected, setSelected] = useState(preference.orgId || "");
   const [toast, notify] = useState("");
   const [busy, setBusy] = useState(false);
@@ -114,12 +115,12 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     if (id === "platform") {
       if (!access.data?.platform) return;
       setPlatformRoute(true);
-      location.hash = "#/organizations";
+      navigate("/organizations");
     } else {
       if (!memberOrgIds.has(id)) return;
       setSelected(id);
       setPlatformRoute(false);
-      location.hash = "#/dashboard";
+      navigate("/dashboard");
     }
     notify("");
   }
