@@ -25,8 +25,7 @@ import { Avatar, Unavailable } from "../../shared/components";
 import { applyBranding, defaultBranding } from "../../shared/utils/branding";
 import { signOut } from "../../features/auth/api";
 export function WorkspaceLayout() {
-  const { state, viewer, setOrg, toast, notify, busy, isPlatform } =
-    useWorkspace();
+  const { state, viewer, toast, notify, busy, isPlatform } = useWorkspace();
   const { session } = useAuth();
   const copy = roleContent[viewer.role];
   const route = useRoute();
