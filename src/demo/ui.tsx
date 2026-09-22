@@ -240,9 +240,6 @@ export function Modal({
       ref={ref}
       className="modal"
       onCancel={close}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
     >
       <div className="modal-heading">
         <div>
