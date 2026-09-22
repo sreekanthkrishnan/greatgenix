@@ -3126,3 +3126,14 @@ button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { backg
 .profile-dropdown-identity small { color: var(--muted); font-size: 12px; margin-top: 5px; }
 .profile-dropdown nav a { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; color: var(--ink); font-size: 14px; }
 .profile-dropdown nav a:hover, .profile-dropdown nav a:focus-visible { background: var(--sage); }
+
+.workspace-switcher { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); max-height: min(360px, 55vh); overflow-y: auto; }
+.workspace-switcher > p { margin: 5px 12px 9px; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.workspace-switcher button { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 8px; padding: 12px; background: transparent; color: var(--ink); text-align: left; }
+.workspace-switcher button:hover, .workspace-switcher button:focus-visible, .workspace-switcher button[aria-pressed="true"] { background: var(--sage); }
+.workspace-switcher button[aria-pressed="true"] { opacity: 1; cursor: default; }
+.workspace-switcher button > span { flex: 1; min-width: 0; }
+.workspace-switcher button svg { flex-shrink: 0; }
+.workspace-switcher strong, .workspace-switcher small { display: block; overflow-wrap: anywhere; }
+.workspace-switcher strong { font-size: 13px; font-weight: 600; }
+.workspace-switcher small { font-size: 11px; margin-top: 4px; color: var(--muted); }

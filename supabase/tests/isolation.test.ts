@@ -733,3 +733,33 @@ test("profile name validation rejects blank names atomically", async () => {
     ).rows[0].name,
   ).toBe("Student");
 });
+
+test("organization and platform administrator roles are independent and can coexist", async () => {
+  await as(admin);
+  expect((await rpc("my_access")).rows[0].result).toMatchObject({
+    platform: false,
+    memberships: [{ orgId: org, role: "teacher-admin" }],
+  });
+  await db.exec("reset role");
+  await db.query('insert into public.platform_admins("userId") values($1)', [
+    admin,
+  ]);
+  await as(admin);
+  expect((await rpc("my_access")).rows[0].result).toMatchObject({
+    platform: true,
+    memberships: [{ orgId: org, role: "teacher-admin" }],
+  });
+  expect((await db.query("select id from public.courses")).rows).toEqual([
+    { id: course },
+  ]);
+  await db.exec("reset role");
+  await db.query('delete from public.platform_admins where "userId"=$1', [
+    admin,
+  ]);
+  await as(admin);
+  expect((await rpc("my_access")).rows[0].result).toMatchObject({
+    platform: false,
+    memberships: [{ orgId: org, role: "teacher-admin" }],
+  });
+  await expect(act({ type: "org-status", orgId: otherOrg })).rejects.toThrow();
+});

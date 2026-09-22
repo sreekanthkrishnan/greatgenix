@@ -35,6 +35,8 @@ export function Router({
   if (page === "profile") return <Profile />;
   if (platform) return <Organizations />;
   switch (page) {
+    case "organizations":
+      return <Organizations />;
     case "dashboard":
       return <Dashboard />;
     case "courses":

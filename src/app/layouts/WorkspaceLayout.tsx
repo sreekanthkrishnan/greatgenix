@@ -25,12 +25,35 @@ import { Avatar, Unavailable } from "../../shared/components";
 import { applyBranding, defaultBranding } from "../../shared/utils/branding";
 import { signOut } from "../../features/auth/api";
 export function WorkspaceLayout() {
-  const { state, viewer, toast, notify, busy, isPlatform } = useWorkspace();
+  const {
+    state,
+    viewer,
+    toast,
+    notify,
+    busy,
+    isPlatform,
+    switchWorkspace,
+    organizationWorkspaces,
+  } = useWorkspace();
   const { session } = useAuth();
   const copy = roleContent[viewer.role];
   const route = useRoute();
   const [menu, setMenu] = useState(false);
-  const org = state.orgs.find((o) => o.id === viewer.orgId)!;
+  const platform = viewer.role === "super-admin";
+  const org = platform
+    ? {
+        id: "platform",
+        name: "Platform administration",
+        active: true,
+        branding: defaultBranding,
+        features: {
+          live: false,
+          recordings: false,
+          assessments: false,
+          attendance: false,
+        },
+      }
+    : state.orgs.find((o) => o.id === viewer.orgId)!;
   const branding = org.branding || defaultBranding;
   const member = state.members.find((m) => m.id === viewer.userId);
   const displayName =
@@ -38,7 +61,6 @@ export function WorkspaceLayout() {
     member?.name ||
     "My profile";
   const initials = initialsFor(displayName);
-  const platform = viewer.role === "super-admin";
   useEffect(() => {
     applyBranding(branding);
     document.title = org.name;
@@ -53,9 +75,6 @@ export function WorkspaceLayout() {
   const nav = platform
     ? [{ id: "organizations", label: "Organizations", icon: Users }]
     : [
-        ...(isPlatform
-          ? [{ id: "organizations", label: "Platform", icon: Users }]
-          : []),
         { id: "dashboard", label: "Overview", icon: LayoutDashboard },
         {
           id: "courses",
@@ -194,6 +213,24 @@ export function WorkspaceLayout() {
               role={copy.label}
               initials={initials}
               route={route}
+              workspaces={[
+                ...(isPlatform
+                  ? [
+                      {
+                        id: "platform",
+                        name: "Platform administration",
+                        role: "Platform administrator",
+                      },
+                    ]
+                  : []),
+                ...organizationWorkspaces.map((org) => ({
+                  ...org,
+                  role: roleContent[org.role].label,
+                })),
+              ]}
+              activeWorkspace={platform ? "platform" : viewer.orgId}
+              onSwitchWorkspace={switchWorkspace}
+              busy={busy}
             />
           </div>
         </header>

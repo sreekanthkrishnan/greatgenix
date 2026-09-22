@@ -12,7 +12,11 @@ const user = {
   created_at: new Date().toISOString(),
 };
 const token = `${Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url")}.${Buffer.from(JSON.stringify({ sub: uid, exp: Math.floor(Date.now() / 1000) + 3600, role: "authenticated" })).toString("base64url")}.test`;
-async function fixture(page: Page, role = "teacher-admin") {
+async function fixture(
+  page: Page,
+  role = "teacher-admin",
+  platformAccess = role === "super-admin",
+) {
   const account = { ...user, user_metadata: { ...user.user_metadata } };
   const org = {
     id: orgId,
@@ -34,6 +38,11 @@ async function fixture(page: Page, role = "teacher-admin") {
       theme: "light",
       tagline: "Room to grow.",
     },
+  };
+  const accessData = {
+    platform: platformAccess,
+    orgs: [org],
+    memberships: role === "super-admin" ? [] : [{ orgId, role }],
   };
   const courses: Record<string, unknown>[] = [];
   const sessions: Record<string, unknown>[] = [];
@@ -81,11 +90,7 @@ async function fixture(page: Page, role = "teacher-admin") {
       const name = url.pathname.split("/").pop();
       if (name === "my_access")
         return route.fulfill({
-          json: {
-            platform: role === "super-admin",
-            orgs: [org],
-            memberships: role === "super-admin" ? [] : [{ orgId, role }],
-          },
+          json: accessData,
         });
       if (name === "apply_action") {
         if (failNext) {
@@ -157,6 +162,7 @@ async function fixture(page: Page, role = "teacher-admin") {
   });
   return {
     org,
+    accessData,
     courses,
     lessons,
     enrollments,
@@ -589,4 +595,118 @@ test("platform administrator has platform wording and editable profile", async (
   await expect(
     page.getByRole("heading", { name: "My profile", exact: true }),
   ).toBeVisible();
+});
+
+test("dual administrators switch between permitted workspaces and preserve profile context on reload", async ({
+  page,
+}) => {
+  const f = await fixture(page, "teacher-admin", true);
+  const foreign = {
+    ...f.org,
+    id: "00000000-0000-4000-8000-000000000011",
+    name: "Other Academy",
+    slug: "other-academy",
+  };
+  f.accessData.orgs.unshift(foreign);
+  await signIn(page);
+  await expect(page.locator(".section-eyebrow")).toHaveText(
+    "YOUR TEACHING & ADMIN SPACE",
+  );
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await expect(
+    page.getByRole("button", { name: /Willow Academy Teacher administrator/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page
+      .locator(".workspace-switcher")
+      .getByRole("button", { name: /Other Academy/ }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "artifacts/workspace-switcher.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page
+    .getByRole("button", {
+      name: /Platform administration Platform administrator/,
+    })
+    .click();
+  await expect(page.locator(".section-eyebrow")).toHaveText(
+    "YOUR PLATFORM SPACE",
+  );
+  await expect(
+    page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: "Organization", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await page.getByRole("link", { name: "My profile", exact: true }).click();
+  await page.reload();
+  await expect(page.locator(".profile-summary .badge")).toHaveText(
+    "Platform administrator",
+  );
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await page
+    .getByRole("button", { name: /Willow Academy Teacher administrator/ })
+    .click();
+  await expect(page.locator(".section-eyebrow")).toHaveText(
+    "YOUR TEACHING & ADMIN SPACE",
+  );
+  await page.reload();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: "Organization", exact: true }),
+  ).toBeVisible();
+  // Membership alone remains usable if the separately assigned platform role is removed.
+  f.accessData.platform = false;
+  await page.reload();
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await expect(
+    page.getByRole("button", {
+      name: /Platform administration Platform administrator/,
+    }),
+  ).toHaveCount(0);
+});
+
+test("organization admins cannot gain platform access through a URL or saved preference", async ({
+  page,
+}) => {
+  await fixture(page);
+  await signIn(page);
+  await page.evaluate(
+    (userId) =>
+      sessionStorage.setItem(
+        `workspace-choice:${userId}`,
+        JSON.stringify({ platform: true, orgId: "not-a-membership" }),
+      ),
+    uid,
+  );
+  await page.goto("/#/organizations");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Platform access is restricted" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await expect(page.locator(".workspace-switcher")).toHaveCount(0);
+  await page.getByRole("link", { name: "My profile", exact: true }).click();
+  await expect(page.locator(".profile-summary .badge")).toHaveText(
+    "Teacher administrator",
+  );
+});
+
+test("platform-only admins can manage an empty platform without an organization membership", async ({
+  page,
+}) => {
+  const f = await fixture(page, "super-admin");
+  f.accessData.orgs.length = 0;
+  await page.goto("/");
+  await page.getByLabel("Email address").fill("admin@example.com");
+  await page.getByLabel("Password", { exact: true }).fill("test-password");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "No organizations yet" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await expect(page.locator(".workspace-switcher")).toHaveCount(0);
 });

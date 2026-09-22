@@ -9,7 +9,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { loadAccess, loadWorkspace } from "../../features/organizations/api";
 import type { Action } from "../../shared/types/actions";
-import type { Viewer, WorkspaceState } from "../../shared/types";
+import type { Viewer, WorkspaceState, Role } from "../../shared/types";
 import { mutate } from "../../shared/lib/mutations";
 import { queryClient } from "./QueryClientProvider";
 import { useAuth } from "./AuthProvider";
@@ -18,7 +18,8 @@ import { Onboarding } from "../../features/organizations/components/Onboarding";
 const Context = createContext<{
   state: WorkspaceState;
   viewer: Viewer;
-  setOrg: (id: string) => void;
+  switchWorkspace: (id: string) => void;
+  organizationWorkspaces: { id: string; name: string; role: Role }[];
   act: (action: Action, message?: string) => Promise<boolean>;
   toast: string;
   notify: (s: string) => void;
@@ -46,8 +47,18 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     queryFn: loadAccess,
     refetchInterval: 30000,
   });
+  const preferenceKey = `workspace-choice:${userId}`;
+  const [preference] = useState<{ platform?: boolean; orgId?: string }>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem(preferenceKey) || "{}") || {};
+    } catch {
+      return {};
+    }
+  });
   const [platformRoute, setPlatformRoute] = useState(
-    location.hash.startsWith("#/organizations"),
+    location.hash.startsWith("#/organizations") ||
+      ((!location.hash || location.hash.startsWith("#/profile")) &&
+        preference.platform === true),
   );
   useEffect(() => {
     const update = () => {
@@ -57,22 +68,65 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, []);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(preference.orgId || "");
   const [toast, notify] = useState("");
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
-  const orgId = access.data?.orgs.some((o) => o.id === selected)
-    ? selected
-    : access.data?.orgs.find(
-        (o) => o.slug === new URLSearchParams(location.search).get("org"),
-      )?.id ||
-      access.data?.orgs[0]?.id ||
-      "";
+  const organizationWorkspaces = (access.data?.orgs || []).flatMap((org) => {
+    const membership = access.data?.memberships.find((m) => m.orgId === org.id);
+    return membership
+      ? [{ id: org.id, name: org.name, role: membership.role }]
+      : [];
+  });
+  // Platform-visible organizations do not imply an organization membership.
+  const memberOrgIds = new Set(organizationWorkspaces.map((org) => org.id));
+  const requestedOrg = access.data?.orgs.find(
+    (org) =>
+      org.slug === new URLSearchParams(location.search).get("org") &&
+      memberOrgIds.has(org.id),
+  );
+  const orgId =
+    (memberOrgIds.has(selected)
+      ? selected
+      : requestedOrg?.id || organizationWorkspaces[0]?.id) ||
+    access.data?.orgs[0]?.id ||
+    "";
   const membership = access.data?.memberships.find((m) => m.orgId === orgId);
+  const platformActive = Boolean(
+    access.data?.platform && (platformRoute || !membership),
+  );
+  useEffect(() => {
+    if (!access.data) return;
+    try {
+      sessionStorage.setItem(
+        preferenceKey,
+        JSON.stringify({
+          platform: platformActive,
+          orgId: membership ? orgId : "",
+        }),
+      );
+    } catch {
+      /* Storage may be unavailable; switching still works. */
+    }
+  }, [access.data, platformActive, preferenceKey, orgId, membership]);
+  function switchWorkspace(id: string) {
+    if (busy) return;
+    if (id === "platform") {
+      if (!access.data?.platform) return;
+      setPlatformRoute(true);
+      location.hash = "#/organizations";
+    } else {
+      if (!memberOrgIds.has(id)) return;
+      setSelected(id);
+      setPlatformRoute(false);
+      location.hash = "#/dashboard";
+    }
+    notify("");
+  }
   const workspace = useQuery({
     queryKey: ["workspace", userId, orgId, membership?.role],
     queryFn: () => loadWorkspace(orgId),
-    enabled: Boolean(orgId && membership),
+    enabled: Boolean(orgId && membership && !platformActive),
     refetchInterval: 30000,
   });
   useEffect(() => () => queryClient.clear(), [userId]);
@@ -123,16 +177,16 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     );
   if (
     new URLSearchParams(location.search).has("invite") ||
-    !access.data.orgs.length
+    (!access.data.platform && !membership)
   )
     return <Onboarding refresh={refresh} />;
-  if (workspace.isPending && membership)
+  if (workspace.isPending && membership && !platformActive)
     return (
       <div className="loading-screen" role="status">
         Loading your organization…
       </div>
     );
-  if (workspace.isError && membership)
+  if (workspace.isError && membership && !platformActive)
     return (
       <div className="auth-card">
         <Notice>{workspace.error.message}</Notice>
@@ -142,22 +196,18 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
   const viewer: Viewer = {
     userId,
     orgId,
-    role:
-      access.data.platform && platformRoute
-        ? "super-admin"
-        : membership?.role || "super-admin",
+    role: platformActive ? "super-admin" : membership!.role,
   };
   return (
     <Context.Provider
       value={{
         state: {
-          ...(membership && !(access.data.platform && platformRoute)
-            ? workspace.data || empty
-            : empty),
+          ...(membership && !platformActive ? workspace.data || empty : empty),
           orgs: access.data.orgs,
         },
         viewer,
-        setOrg: setSelected,
+        switchWorkspace,
+        organizationWorkspaces,
         act,
         busy,
         isPlatform: access.data.platform,
