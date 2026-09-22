@@ -1,5 +1,7 @@
 # MVP Architecture — Confirmed Stack and Recommendations
 
+> Implementation update — 22 September 2026: the current UI and Supabase implementation, feature-based structure, and per-organization white labeling are now user-approved. See [implementation and deployment notes](implementation.md) for what is built, implementation choices, validation, and remaining hosted integration work. Earlier proposal language below is retained as product history.
+
 Updated and provider sources checked: **22 September 2026**  
 Status: **React frontend + Supabase backend confirmed for MVP and initial release**; finer libraries, hosting, video providers and runtimes remain recommendations. No implementation, purchase or deployment is authorized by this document.
 
@@ -37,16 +39,16 @@ Arrows between server logic and video providers carry control requests, credenti
 
 ## Stack and boundaries
 
-| Layer | Proposal | Reason / constraint |
-| --- | --- | --- |
-| User interface | React confirmed; TypeScript, Vite, Cloudflare Pages and optional PWA proposed | Shared teacher/student UI with gated administrative sections; no separate parent or teacher apps |
+| Layer                          | Proposal                                                                                                  | Reason / constraint                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| User interface                 | React confirmed; TypeScript, Vite, Cloudflare Pages and optional PWA proposed                             | Shared teacher/student UI with gated administrative sections; no separate parent or teacher apps                                         |
 | Backend APIs and trusted logic | Supabase backend confirmed; Data APIs/functions as appropriate, Edge Functions proposed for trusted logic | Organization/feature/role checks, video credentials, secrets and callbacks remain server-side; no additional standalone MVP API required |
-| Identity and data | Supabase Auth and PostgreSQL; RLS policy design proposed | Relational academic records and organization isolation; policies must be designed and tested |
-| Documents | Supabase Storage; private bucket design proposed | Scoped access to documents and submissions, with file/size quotas |
-| Recorded classes | Mux adapter, signed playback | Small free pilot; paid Mux or Cloudflare Stream are later options |
-| Interactive classes | Daily Prebuilt initially, SDK customization only as needed | Meetings need participant/host controls; recorded-video delivery is a different service |
-| Search and review | Curated catalog in PostgreSQL; teacher review before publication | Filter by organization/access, grade/age and subject; no open-web search in the proposed MVP |
-| Operations | Audit records, usage ledger, provider reconciliation, background jobs as needed | Trace sensitive changes and control shared quotas; avoid premature service splitting |
+| Identity and data              | Supabase Auth and PostgreSQL; RLS policy design proposed                                                  | Relational academic records and organization isolation; policies must be designed and tested                                             |
+| Documents                      | Supabase Storage; private bucket design proposed                                                          | Scoped access to documents and submissions, with file/size quotas                                                                        |
+| Recorded classes               | Mux adapter, signed playback                                                                              | Small free pilot; paid Mux or Cloudflare Stream are later options                                                                        |
+| Interactive classes            | Daily Prebuilt initially, SDK customization only as needed                                                | Meetings need participant/host controls; recorded-video delivery is a different service                                                  |
+| Search and review              | Curated catalog in PostgreSQL; teacher review before publication                                          | Filter by organization/access, grade/age and subject; no open-web search in the proposed MVP                                             |
+| Operations                     | Audit records, usage ledger, provider reconciliation, background jobs as needed                           | Trace sensitive changes and control shared quotas; avoid premature service splitting                                                     |
 
 Official implementation references, checked 22 September 2026: [Supabase Data APIs](https://supabase.com/docs/guides/api), [Supabase Edge Functions](https://supabase.com/docs/guides/functions), [Supabase function secrets](https://supabase.com/docs/guides/functions/secrets), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), and [Vite on Pages](https://developers.cloudflare.com/pages/framework-guides/deploy-a-vite3-project/). React and Supabase are user-confirmed; these references inform the remaining implementation recommendations.
 
@@ -64,13 +66,13 @@ Live media: trusted Supabase functions create private rooms and issue short-live
 
 Snapshot in USD, checked on 22 September 2026. These are provider allowances, not allowances automatically granted to each customer organization. Recheck terms before signup or launch.
 
-| Service | Verified free allowance / paid option | Planning implication |
-| --- | --- | --- |
-| Mux recorded video | Free: up to 10 stored on-demand videos and 100,000 delivery minutes/month; no card required; live excluded. [Pricing](https://www.mux.com/pricing) | Suitable only for a tiny recording library; more stored videos require reconsidering the plan |
-| Daily interactive video | First 10,000 participant-minutes/month free; next tier $0.004/participant-minute. No automatic hard stop after free usage; recording is separately priced. [Pricing and FAQ](https://www.daily.co/pricing/video-sdk/) | Count every participant, including teachers; build usage/admission controls and separately budget recording |
-| Cloudflare Stream, paid recorded-video alternative | $5/month per 1,000 minutes of storage capacity, purchased in increments; $1 per 1,000 delivered minutes. [Pricing](https://developers.cloudflare.com/stream/pricing/) | Paid migration candidate; not a free pilot recommendation |
-| Supabase | Free: 500 MB database, 1 GB file storage, 5 GB egress plus 5 GB cached egress; pauses after one week of inactivity; automatic backups not included. [Pricing](https://supabase.com/pricing) | Pilot tier; establish and test backups/restoration before using it as a school's system of record |
-| Cloudflare Pages, proposed static hosting | Static asset requests that do not invoke Functions are free/unlimited. [Pages pricing](https://developers.cloudflare.com/pages/functions/pricing/) | This recommendation covers the frontend; Workers API quotas are not the Supabase backend's limits |
+| Service                                            | Verified free allowance / paid option                                                                                                                                                                                 | Planning implication                                                                                        |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Mux recorded video                                 | Free: up to 10 stored on-demand videos and 100,000 delivery minutes/month; no card required; live excluded. [Pricing](https://www.mux.com/pricing)                                                                    | Suitable only for a tiny recording library; more stored videos require reconsidering the plan               |
+| Daily interactive video                            | First 10,000 participant-minutes/month free; next tier $0.004/participant-minute. No automatic hard stop after free usage; recording is separately priced. [Pricing and FAQ](https://www.daily.co/pricing/video-sdk/) | Count every participant, including teachers; build usage/admission controls and separately budget recording |
+| Cloudflare Stream, paid recorded-video alternative | $5/month per 1,000 minutes of storage capacity, purchased in increments; $1 per 1,000 delivered minutes. [Pricing](https://developers.cloudflare.com/stream/pricing/)                                                 | Paid migration candidate; not a free pilot recommendation                                                   |
+| Supabase                                           | Free: 500 MB database, 1 GB file storage, 5 GB egress plus 5 GB cached egress; pauses after one week of inactivity; automatic backups not included. [Pricing](https://supabase.com/pricing)                           | Pilot tier; establish and test backups/restoration before using it as a school's system of record           |
+| Cloudflare Pages, proposed static hosting          | Static asset requests that do not invoke Functions are free/unlimited. [Pages pricing](https://developers.cloudflare.com/pages/functions/pricing/)                                                                    | This recommendation covers the frontend; Workers API quotas are not the Supabase backend's limits           |
 
 Example calculation, not a usage forecast: **(25 students + 1 teacher) × 60 minutes = 1,560 participant-minutes**. Six such sessions total **9,360**, leaving 640 of Daily's free allowance if there is no other usage. A seventh full session would exceed it. Concurrent sessions consume the same shared budget faster; meeting duration alone is not the billing unit.
 

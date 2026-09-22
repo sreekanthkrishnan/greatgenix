@@ -1,36 +1,38 @@
 # Education SaaS — Product Specification
 
+> Implementation update — 22 September 2026: the current UI and Supabase implementation, feature-based structure, and per-organization white labeling are now user-approved. See [implementation and deployment notes](implementation.md) for what is built, implementation choices, validation, and remaining hosted integration work. Earlier proposal language below is retained as product history.
+
 Version: 0.5  
 Created: 22 September 2026  
 Status: discovery draft
 
 ## 1. Confirmed requirements
 
-| ID | Requirement |
-| --- | --- |
-| C-001 | Build an education SaaS application. |
-| C-002 | Support multiple levels of users. |
-| C-003 | Document the product before implementation begins. |
-| C-004 | Great Genix is the first and primary customer. Current development should address this organization's needs. |
-| C-005 | The organization is the account/user-mapping boundary. Great Genix uses one centralized application as one organization, regardless of physical centers or online delivery. |
-| C-006 | The hierarchy is platform-level super users (the product owner/operator team) → customer organizations → users mapped to each organization. An organization is an entity; organization administrator is a user role. |
-| C-007 | Identified organization role examples are organization administrator, teacher, student, and HR. Other roles and exact permissions remain to be defined. Selected teachers may also be organization admins in the MVP (C-016); broader role combinations remain open. |
-| C-008 | Future intended customers include tuition centers, individual educators conducting classes, schools, colleges, institutions, and umbrella organizations operating several schools or colleges. |
-| C-009 | Future customers may subscribe to the SaaS or potentially obtain the whole application as a separate project. The details of these offerings remain undefined. |
-| C-010 | The SaaS serves multiple independent customer organizations, with Great Genix first. Vedantu, Byju’s, and Sarvodaya were illustrative possibilities, not actual customers. |
-| C-011 | Each organization can choose/customize which product features it needs. Feature selection and enabling must be available during organization creation and after creation. |
-| C-012 | Subscription plans or amounts may vary according to selected features. Organization-specific feature configuration and subscription-linked access are distinct from individual user-role permissions. No prices or exact billing rules are decided. |
+| ID    | Requirement                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C-001 | Build an education SaaS application.                                                                                                                                                                                                                                                                                                                                                                                 |
+| C-002 | Support multiple levels of users.                                                                                                                                                                                                                                                                                                                                                                                    |
+| C-003 | Document the product before implementation begins.                                                                                                                                                                                                                                                                                                                                                                   |
+| C-004 | Great Genix is the first and primary customer. Current development should address this organization's needs.                                                                                                                                                                                                                                                                                                         |
+| C-005 | The organization is the account/user-mapping boundary. Great Genix uses one centralized application as one organization, regardless of physical centers or online delivery.                                                                                                                                                                                                                                          |
+| C-006 | The hierarchy is platform-level super users (the product owner/operator team) → customer organizations → users mapped to each organization. An organization is an entity; organization administrator is a user role.                                                                                                                                                                                                 |
+| C-007 | Identified organization role examples are organization administrator, teacher, student, and HR. Other roles and exact permissions remain to be defined. Selected teachers may also be organization admins in the MVP (C-016); broader role combinations remain open.                                                                                                                                                 |
+| C-008 | Future intended customers include tuition centers, individual educators conducting classes, schools, colleges, institutions, and umbrella organizations operating several schools or colleges.                                                                                                                                                                                                                       |
+| C-009 | Future customers may subscribe to the SaaS or potentially obtain the whole application as a separate project. The details of these offerings remain undefined.                                                                                                                                                                                                                                                       |
+| C-010 | The SaaS serves multiple independent customer organizations, with Great Genix first. Vedantu, Byju’s, and Sarvodaya were illustrative possibilities, not actual customers.                                                                                                                                                                                                                                           |
+| C-011 | Each organization can choose/customize which product features it needs. Feature selection and enabling must be available during organization creation and after creation.                                                                                                                                                                                                                                            |
+| C-012 | Subscription plans or amounts may vary according to selected features. Organization-specific feature configuration and subscription-linked access are distinct from individual user-role permissions. No prices or exact billing rules are decided.                                                                                                                                                                  |
 | C-013 | Example selectable capabilities include attendance and registration (grouping to clarify), live online classes, recorded classes, assessments/assessment sessions, webinars, workshops, report cards, parent communication/parent-facing functionality, and teacher-facing functionality. The full list is not a committed launch scope; live and recorded classes are subsequently confirmed initial needs (C-017). |
-| C-014 | The product provides multiple features. Parent-facing and teacher-facing functionality do not imply separate applications, deployments, or particular clients. |
-| C-015 | Focus the MVP heavily on teacher and student screens, with minimal platform super-admin screens. Detailed screen contents remain proposed. |
-| C-016 | Selected teachers may also act as organization admins initially through explicit assignment. Do not give all teachers admin privileges. A separate organization-admin experience is later. |
-| C-017 | Live classes and recorded classes are initial needs. Provider choices and automatic recording of live sessions are not decided. |
-| C-018 | Prioritize privacy and age-appropriate educational content, preventing explicit and noneducational results. Contextual, age-appropriate biology/reproductive-health education should remain distinguishable from explicit material; no perfect filtering or compliance guarantee is assumed. |
-| C-019 | Long-term vision: digitize paper school registers/processes and eventually provide education document/file/productivity/collaboration tools, with schools able to interconnect. This is separate from the MVP; organizations remain isolated by default and future sharing must be explicit and scoped. |
-| C-020 | Seek scalable technology with essentially no initial investment, especially free recorded-video hosting with a later paid path. This is a design goal, not a guarantee of zero-cost production or approval of any provider. |
-| C-021 | Final MVP and initial-release stack: React frontend + Supabase backend, using PostgreSQL, Auth, storage and APIs/functions as appropriate. Avoid Python in the initial phase. Finer libraries, hosting and video providers remain recommendations. |
-| C-022 | Trusted organization/feature/role checks, video-token issuance, secrets and provider callbacks remain server-side. Supabase Edge Functions are a proposed runtime; an additional standalone Hono/Cloudflare Workers backend is not required. |
-| C-023 | A Python backend may be introduced in the future, but is optional and unscheduled. Preserve frontend/backend interfaces and provider integration boundaries; adopting Python or replacing Supabase requires deliberate work. |
+| C-014 | The product provides multiple features. Parent-facing and teacher-facing functionality do not imply separate applications, deployments, or particular clients.                                                                                                                                                                                                                                                       |
+| C-015 | Focus the MVP heavily on teacher and student screens, with minimal platform super-admin screens. Detailed screen contents remain proposed.                                                                                                                                                                                                                                                                           |
+| C-016 | Selected teachers may also act as organization admins initially through explicit assignment. Do not give all teachers admin privileges. A separate organization-admin experience is later.                                                                                                                                                                                                                           |
+| C-017 | Live classes and recorded classes are initial needs. Provider choices and automatic recording of live sessions are not decided.                                                                                                                                                                                                                                                                                      |
+| C-018 | Prioritize privacy and age-appropriate educational content, preventing explicit and noneducational results. Contextual, age-appropriate biology/reproductive-health education should remain distinguishable from explicit material; no perfect filtering or compliance guarantee is assumed.                                                                                                                         |
+| C-019 | Long-term vision: digitize paper school registers/processes and eventually provide education document/file/productivity/collaboration tools, with schools able to interconnect. This is separate from the MVP; organizations remain isolated by default and future sharing must be explicit and scoped.                                                                                                              |
+| C-020 | Seek scalable technology with essentially no initial investment, especially free recorded-video hosting with a later paid path. This is a design goal, not a guarantee of zero-cost production or approval of any provider.                                                                                                                                                                                          |
+| C-021 | Final MVP and initial-release stack: React frontend + Supabase backend, using PostgreSQL, Auth, storage and APIs/functions as appropriate. Avoid Python in the initial phase. Finer libraries, hosting and video providers remain recommendations.                                                                                                                                                                   |
+| C-022 | Trusted organization/feature/role checks, video-token issuance, secrets and provider callbacks remain server-side. Supabase Edge Functions are a proposed runtime; an additional standalone Hono/Cloudflare Workers backend is not required.                                                                                                                                                                         |
+| C-023 | A Python backend may be introduced in the future, but is optional and unscheduled. Preserve frontend/backend interfaces and provider integration boundaries; adopting Python or replacing Supabase requires deliberate work.                                                                                                                                                                                         |
 
 Sections below distinguish confirmed direction from proposals and open questions. Existing feature suggestions are not approved scope. This document uses the established project spelling **Great Genix**; “Great Genics” in the voice planning conversation refers to the same organization.
 
@@ -77,15 +79,15 @@ Proposed safeguards: organization mapping should not implicitly grant access to 
 
 ## 4. User levels and roles
 
-| Level or role | Confirmation status | Details still open |
-| --- | --- | --- |
-| Platform super users | Confirmed: product owner/operator team at platform level | Administrative powers, support access, and operational responsibilities |
-| Customer organization | Confirmed entity: Great Genix is the primary example; this is not a user role | Organization setup and lifecycle |
-| Organization administrator | Confirmed role; selected teachers may hold this responsibility in the MVP | Exact permissions and assignment authority; separate admin experience is later |
-| Teacher / instructor | Confirmed example of an organization role | Teaching scope and permissions |
-| Student / learner | Confirmed example of an organization role | Learning access and permissions |
-| HR | Confirmed example of an organization role | Responsibilities, records, and permissions; no HR module or payroll scope is implied |
-| Other organization roles | To be defined | Names, responsibilities, and release priority |
+| Level or role              | Confirmation status                                                           | Details still open                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Platform super users       | Confirmed: product owner/operator team at platform level                      | Administrative powers, support access, and operational responsibilities              |
+| Customer organization      | Confirmed entity: Great Genix is the primary example; this is not a user role | Organization setup and lifecycle                                                     |
+| Organization administrator | Confirmed role; selected teachers may hold this responsibility in the MVP     | Exact permissions and assignment authority; separate admin experience is later       |
+| Teacher / instructor       | Confirmed example of an organization role                                     | Teaching scope and permissions                                                       |
+| Student / learner          | Confirmed example of an organization role                                     | Learning access and permissions                                                      |
+| HR                         | Confirmed example of an organization role                                     | Responsibilities, records, and permissions; no HR module or payroll scope is implied |
+| Other organization roles   | To be defined                                                                 | Names, responsibilities, and release priority                                        |
 
 Earlier suggestions for a separate organization owner, platform support agent, branch/campus admin, parent/guardian, and finance staff remain optional proposals. None is required by the confirmed hierarchy. Fixed versus custom roles, combinations beyond the selected teacher/admin case, and the complete release role set remain undecided.
 
@@ -95,17 +97,17 @@ Earlier suggestions for a separate organization owner, platform support agent, b
 
 No exact permission matrix is confirmed. The earlier draft allocation is replaced by the questions below so it does not become an implementation assumption.
 
-| Capability area | Decision needed |
-| --- | --- |
-| Organization administration | Who may create, configure, suspend, or restore an organization? |
-| User and role management | Who may map users, invite administrators, assign roles, or revoke access? |
-| Academic setup | Who may create classes, assign teachers, and enroll learners? |
-| Teaching and assessment | Who may publish materials, submit work, grade, and release results, and within what scope? |
-| HR | What responsibilities and records belong to HR, and who else may access them? |
-| Reporting and communications | Who may view progress, send announcements, export records, and review audit history? |
-| Commercial administration | Who manages any subscription or separate-project arrangement? |
-| Feature configuration | Which roles may select, enable, change, or remove an organization's features during setup and afterward? |
-| Platform support | When may platform super users access organization data, and through what controls? |
+| Capability area              | Decision needed                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Organization administration  | Who may create, configure, suspend, or restore an organization?                                          |
+| User and role management     | Who may map users, invite administrators, assign roles, or revoke access?                                |
+| Academic setup               | Who may create classes, assign teachers, and enroll learners?                                            |
+| Teaching and assessment      | Who may publish materials, submit work, grade, and release results, and within what scope?               |
+| HR                           | What responsibilities and records belong to HR, and who else may access them?                            |
+| Reporting and communications | Who may view progress, send announcements, export records, and review audit history?                     |
+| Commercial administration    | Who manages any subscription or separate-project arrangement?                                            |
+| Feature configuration        | Which roles may select, enable, change, or remove an organization's features during setup and afterward? |
+| Platform support             | When may platform super users access organization data, and through what controls?                       |
 
 ### 5.2 Proposed enforcement safeguards
 
@@ -143,17 +145,17 @@ Each organization must be able to select and enable the features it needs both d
 
 ### 6.2 User-provided capability examples
 
-| Example capability | Definition still needed |
-| --- | --- |
-| Attendance and registration | Spoken as “attendance registrations”; clarify whether these are separate capabilities, a combined workflow, or another grouping, and what registration covers |
-| Live online classes | Session workflow and delivery/integration approach |
-| Recorded classes | Recording access and content workflow |
-| Assessments / assessment sessions | Assessment types, session behavior, and evaluation workflow |
-| Webinars | Event and participation workflow |
-| Workshops | Event and participation workflow |
-| Report cards | Contents, publication, and visibility |
-| Parent communication / parent-facing functionality | Communication needs, relationships, and permitted views |
-| Teacher-facing functionality | Required teaching workflows and actions |
+| Example capability                                 | Definition still needed                                                                                                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Attendance and registration                        | Spoken as “attendance registrations”; clarify whether these are separate capabilities, a combined workflow, or another grouping, and what registration covers |
+| Live online classes                                | Session workflow and delivery/integration approach                                                                                                            |
+| Recorded classes                                   | Recording access and content workflow                                                                                                                         |
+| Assessments / assessment sessions                  | Assessment types, session behavior, and evaluation workflow                                                                                                   |
+| Webinars                                           | Event and participation workflow                                                                                                                              |
+| Workshops                                          | Event and participation workflow                                                                                                                              |
+| Report cards                                       | Contents, publication, and visibility                                                                                                                         |
+| Parent communication / parent-facing functionality | Communication needs, relationships, and permitted views                                                                                                       |
+| Teacher-facing functionality                       | Required teaching workflows and actions                                                                                                                       |
 
 These examples describe multiple features, not multiple applications. No separate parent app, teacher app, deployed application, or specific client is implied. Live and recorded classes were subsequently confirmed as initial needs; the other examples still do not establish a release date, bundle, or launch commitment.
 
@@ -161,27 +163,27 @@ These examples describe multiple features, not multiple applications. No separat
 
 The following candidate breakdown is retained for planning. “Core candidate” is a proposal, not a decision that a module is mandatory for all organizations. Its grouping must be reconciled with the feature catalog above.
 
-| Module | Candidate capabilities | Proposed scope / open detail |
-| --- | --- | --- |
-| Identity and access | Sign-in, recovery, invitations, memberships, role assignment, account suspension | Core candidate |
-| Organization setup | Organization profile, authorized administrators, academic settings | Core candidate; physical centers are not required |
-| User management | Organization user directory, role mapping, invitations, status management | Core candidate; includes defining administrator, teacher, student, and HR needs |
-| Center / campus operations | Optional location records and operational workflows | Only if Great Genix needs them; not an account boundary |
-| HR workflows | Capabilities to be defined with Great Genix | Role identified; module scope undecided |
-| Academic structure | Courses/classes, batches/sections, terms, teacher assignments, enrollment | Core candidate; terminology TBD |
-| Learning content | Publish materials, organize lessons, control learner access | Core candidate |
-| Assignments | Due dates, submissions, grading, feedback, publication of results | Core candidate |
-| Attendance | Session attendance, corrections, learner history | Customer-dependent |
-| Announcements | Organization and class notices, notification preferences | Core candidate |
-| Reports | Membership, enrollment, completion, attendance, and result summaries | Metrics depend on approved modules |
-| Organization feature configuration | Feature selection and enabling at creation and afterward | Confirmed capability; bundles, authority, and lifecycle rules TBD |
-| SaaS subscriptions | Feature-linked organization access and potentially varying plans/amounts; candidate trial and lifecycle workflows | Feature relationship confirmed; exact commercial model TBD |
-| Learner fee management | Charges, collections, receipts, refunds | Separate from SaaS subscriptions; later candidate |
-| Parent-facing functionality | Candidate linked learner progress and notices | User-provided feature example; no separate application implied |
-| Live / recorded learning | Live online classes and recorded classes | Confirmed initial needs; detailed workflows/provider choices TBD |
-| Events | Webinars and workshops | User-provided feature examples; launch priority TBD |
-| Assessments and report cards | Assessment sessions, evaluation, published report cards | User-provided feature examples; scope TBD |
-| Other learning features | Quizzes, certificates, discussions | Earlier proposals; grouping and priority TBD |
+| Module                             | Candidate capabilities                                                                                            | Proposed scope / open detail                                                    |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Identity and access                | Sign-in, recovery, invitations, memberships, role assignment, account suspension                                  | Core candidate                                                                  |
+| Organization setup                 | Organization profile, authorized administrators, academic settings                                                | Core candidate; physical centers are not required                               |
+| User management                    | Organization user directory, role mapping, invitations, status management                                         | Core candidate; includes defining administrator, teacher, student, and HR needs |
+| Center / campus operations         | Optional location records and operational workflows                                                               | Only if Great Genix needs them; not an account boundary                         |
+| HR workflows                       | Capabilities to be defined with Great Genix                                                                       | Role identified; module scope undecided                                         |
+| Academic structure                 | Courses/classes, batches/sections, terms, teacher assignments, enrollment                                         | Core candidate; terminology TBD                                                 |
+| Learning content                   | Publish materials, organize lessons, control learner access                                                       | Core candidate                                                                  |
+| Assignments                        | Due dates, submissions, grading, feedback, publication of results                                                 | Core candidate                                                                  |
+| Attendance                         | Session attendance, corrections, learner history                                                                  | Customer-dependent                                                              |
+| Announcements                      | Organization and class notices, notification preferences                                                          | Core candidate                                                                  |
+| Reports                            | Membership, enrollment, completion, attendance, and result summaries                                              | Metrics depend on approved modules                                              |
+| Organization feature configuration | Feature selection and enabling at creation and afterward                                                          | Confirmed capability; bundles, authority, and lifecycle rules TBD               |
+| SaaS subscriptions                 | Feature-linked organization access and potentially varying plans/amounts; candidate trial and lifecycle workflows | Feature relationship confirmed; exact commercial model TBD                      |
+| Learner fee management             | Charges, collections, receipts, refunds                                                                           | Separate from SaaS subscriptions; later candidate                               |
+| Parent-facing functionality        | Candidate linked learner progress and notices                                                                     | User-provided feature example; no separate application implied                  |
+| Live / recorded learning           | Live online classes and recorded classes                                                                          | Confirmed initial needs; detailed workflows/provider choices TBD                |
+| Events                             | Webinars and workshops                                                                                            | User-provided feature examples; launch priority TBD                             |
+| Assessments and report cards       | Assessment sessions, evaluation, published report cards                                                           | User-provided feature examples; scope TBD                                       |
+| Other learning features            | Quizzes, certificates, discussions                                                                                | Earlier proposals; grouping and priority TBD                                    |
 
 AI features, a public course marketplace, native mobile apps, payroll, transport, library management, and hostel management are outside the proposed first release unless explicitly prioritized.
 
@@ -252,16 +254,16 @@ Open behavior: bundles, dependencies, pricing calculation, confirmation/approval
 
 Confirmed emphasis: teacher/student screens, selected teacher-admins in the same initial experience, and minimal super-admin screens. The following details are proposed; see the [MVP screen plan](mvp-screens.md) for workflows and access boundaries.
 
-| Audience | Candidate screens |
-| --- | --- |
-| Shared | Sign-in, account recovery, invitation acceptance, profile, notifications, access-denied state; organization switching only if cross-organization membership is approved |
-| Platform super users | Minimal organization creation/status, feature enablement and usage console; detailed controls remain proposed |
-| Selected teacher with explicit organization-admin assignment | Restricted organization settings, members/invites and authorized setup; separate organization-admin experience later |
-| Teacher | Dashboard, authorized course/batch and roster management, session schedule, recording upload/review/publish, proposed attendance and basic assessment review |
-| Learner | Dashboard/my courses, lesson and live-session page, proposed basic assessment/submission/results |
-| HR | Later candidate; screens to be defined once responsibilities are established |
-| Guardian, if selected later | Linked learners, permitted progress, attendance, notices; no separate app required |
-| Feature configuration — authorized actor TBD | Feature selection during organization creation and post-creation settings; subscription effects and effective availability once rules are defined |
+| Audience                                                     | Candidate screens                                                                                                                                                       |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared                                                       | Sign-in, account recovery, invitation acceptance, profile, notifications, access-denied state; organization switching only if cross-organization membership is approved |
+| Platform super users                                         | Minimal organization creation/status, feature enablement and usage console; detailed controls remain proposed                                                           |
+| Selected teacher with explicit organization-admin assignment | Restricted organization settings, members/invites and authorized setup; separate organization-admin experience later                                                    |
+| Teacher                                                      | Dashboard, authorized course/batch and roster management, session schedule, recording upload/review/publish, proposed attendance and basic assessment review            |
+| Learner                                                      | Dashboard/my courses, lesson and live-session page, proposed basic assessment/submission/results                                                                        |
+| HR                                                           | Later candidate; screens to be defined once responsibilities are established                                                                                            |
+| Guardian, if selected later                                  | Linked learners, permitted progress, attendance, notices; no separate app required                                                                                      |
+| Feature configuration — authorized actor TBD                 | Feature selection during organization creation and post-creation settings; subscription effects and effective availability once rules are defined                       |
 
 Every approved screen needs loading, empty, success, validation-error, permission-error, and unavailable states documented during detailed design.
 
@@ -269,30 +271,30 @@ Every approved screen needs loading, empty, success, validation-error, permissio
 
 This is a vocabulary and relationship sketch, not a database schema. The organization boundary and mapping of users to organizations are confirmed; other entities and implementation details are proposals.
 
-| Entity | Purpose and relationships |
-| --- | --- |
-| User | Account identity; selected teachers may also be admins; broader role combinations and cross-organization mapping remain open |
-| Organization | Confirmed account/user-mapping boundary, independent of physical locations; distinct from the administrator role |
-| Membership / user mapping | Proposed representation of the confirmed user-to-organization mapping; cardinality and lifecycle remain open |
-| Role assignment | Proposed representation of organization role/scope, including explicit teacher-admin assignments; broader combinations remain open |
-| Invitation | Intended recipient, organization, role/scope, expiry, acceptance status |
-| Center / branch / campus | Optional operational location within an organization; not a prerequisite or account boundary |
-| Academic period | Optional term or academic year |
-| Course | Subject or learning offering |
-| Class / cohort | Delivery of a course to a particular group |
-| Teaching assignment | Connects a teacher membership to a class/cohort |
-| Enrollment | Connects a learner membership to a class/cohort |
-| Material | Learning content and publication/access state |
-| Assignment | Task, due date, submission rules, grading configuration |
-| Submission | Learner work, timestamps, and any permitted revisions |
-| Grade / feedback | Evaluation with draft and published states |
-| Attendance record | Optional learner status for a teaching session |
-| Guardian relationship | Optional verified guardian-to-learner link |
-| Announcement | Message and its intended audience |
-| Subscription | Organization's SaaS plan, status, and entitlements |
-| Feature definition | Proposed catalog representation of selectable capabilities; bundles and dependencies TBD |
+| Entity                             | Purpose and relationships                                                                                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User                               | Account identity; selected teachers may also be admins; broader role combinations and cross-organization mapping remain open                         |
+| Organization                       | Confirmed account/user-mapping boundary, independent of physical locations; distinct from the administrator role                                     |
+| Membership / user mapping          | Proposed representation of the confirmed user-to-organization mapping; cardinality and lifecycle remain open                                         |
+| Role assignment                    | Proposed representation of organization role/scope, including explicit teacher-admin assignments; broader combinations remain open                   |
+| Invitation                         | Intended recipient, organization, role/scope, expiry, acceptance status                                                                              |
+| Center / branch / campus           | Optional operational location within an organization; not a prerequisite or account boundary                                                         |
+| Academic period                    | Optional term or academic year                                                                                                                       |
+| Course                             | Subject or learning offering                                                                                                                         |
+| Class / cohort                     | Delivery of a course to a particular group                                                                                                           |
+| Teaching assignment                | Connects a teacher membership to a class/cohort                                                                                                      |
+| Enrollment                         | Connects a learner membership to a class/cohort                                                                                                      |
+| Material                           | Learning content and publication/access state                                                                                                        |
+| Assignment                         | Task, due date, submission rules, grading configuration                                                                                              |
+| Submission                         | Learner work, timestamps, and any permitted revisions                                                                                                |
+| Grade / feedback                   | Evaluation with draft and published states                                                                                                           |
+| Attendance record                  | Optional learner status for a teaching session                                                                                                       |
+| Guardian relationship              | Optional verified guardian-to-learner link                                                                                                           |
+| Announcement                       | Message and its intended audience                                                                                                                    |
+| Subscription                       | Organization's SaaS plan, status, and entitlements                                                                                                   |
+| Feature definition                 | Proposed catalog representation of selectable capabilities; bundles and dependencies TBD                                                             |
 | Organization feature configuration | Proposed representation of an organization's selected features and effective availability under subscription rules; lifecycle and storage design TBD |
-| Audit event | Actor, organization context, action, target, time, and permitted change metadata |
+| Audit event                        | Actor, organization context, action, target, time, and permitted change metadata                                                                     |
 
 Organization-scoped relationships must not accidentally connect records belonging to different organizations. Any future cross-organization sharing requires a separately designed explicit grant and scope; no such sharing is included in the MVP. Sensitive content should not be copied indiscriminately into audit logs.
 
@@ -321,18 +323,18 @@ The organization's payment to the SaaS provider is separate from any learner tui
 
 The following are proposed design requirements; numeric targets and jurisdiction-specific obligations remain open.
 
-| Area | Requirement to define and validate |
-| --- | --- |
-| Security | Server-side authorization, secure account recovery, session revocation, privileged-user authentication controls, abuse protection |
-| Data isolation | No cross-organization exposure through APIs, files, jobs, search, exports, or caches |
-| Privacy | Minimum necessary data, retention and deletion rules, export rights, guardian access, handling of minors' data where relevant |
-| Accessibility | Keyboard operation, readable contrast, labeled inputs, understandable validation, assistive-technology support; target standard TBD |
-| Device support | Responsive web interface; supported browsers and low-bandwidth expectations TBD |
-| Reliability | Backup and restore process, incident visibility, recovery targets, availability target TBD |
-| Performance | Agree expected organizations, concurrent users, roster sizes, and response-time targets before choosing infrastructure |
-| Localization | Time zones, date formats, languages, and currencies based on launch markets |
-| Observability | Operational errors and actionable alerts without exposing sensitive learner information |
-| File handling | Authorized uploads/downloads, file limits, validation, and retention policy |
+| Area           | Requirement to define and validate                                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Security       | Server-side authorization, secure account recovery, session revocation, privileged-user authentication controls, abuse protection   |
+| Data isolation | No cross-organization exposure through APIs, files, jobs, search, exports, or caches                                                |
+| Privacy        | Minimum necessary data, retention and deletion rules, export rights, guardian access, handling of minors' data where relevant       |
+| Accessibility  | Keyboard operation, readable contrast, labeled inputs, understandable validation, assistive-technology support; target standard TBD |
+| Device support | Responsive web interface; supported browsers and low-bandwidth expectations TBD                                                     |
+| Reliability    | Backup and restore process, incident visibility, recovery targets, availability target TBD                                          |
+| Performance    | Agree expected organizations, concurrent users, roster sizes, and response-time targets before choosing infrastructure              |
+| Localization   | Time zones, date formats, languages, and currencies based on launch markets                                                         |
+| Observability  | Operational errors and actionable alerts without exposing sensitive learner information                                             |
+| File handling  | Authorized uploads/downloads, file limits, validation, and retention policy                                                         |
 
 No jurisdiction-specific legal compliance claim is made in this draft. Applicable requirements depend on launch markets, customer type, and learner ages.
 

@@ -1,0 +1,4 @@
+-- No production users, passwords or student records are seeded.
+-- Sign up, confirm your email in local Inbucket, and create your organization in the UI.
+-- Platform administrators are provisioned out-of-band by a trusted database operator:
+-- insert into public.platform_admins("userId") values ('<verified-auth-user-uuid>');
