@@ -110,7 +110,7 @@ small {
   font-size: 0.8125rem;
 }
 .eyebrow {
-  font-size:0.9rem;
+  font-size:0.7rem;
   font-weight: 700;
   letter-spacing: 1.7px;
   line-height: 1.6;
@@ -122,7 +122,7 @@ small {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 11px 16px;
-  font-size: 1rem;
+  font-size:0.85rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -179,7 +179,7 @@ small {
   gap: 8px;
   align-items: center;
   color: var(--green);
-  font-size: 1rem;
+  font-size:0.85rem;
   font-weight: 600;
 }
 .text-link:hover {
@@ -217,7 +217,7 @@ small {
 .badge.light {
   background: #ffffff91;
   color: #3e5b3d;
-  font-size:0.8rem;
+  font-size:0.7rem;
   letter-spacing: 1px;
 }
 .status-dot {
@@ -248,7 +248,7 @@ small {
 .avatar.small {
   width: 32px;
   height: 32px;
-  font-size:0.8rem;
+  font-size:0.7rem;
 }
 .demo-bar {
   height: 42px;
@@ -364,7 +364,7 @@ small {
   background: #e4ead8;
   color: #3d5c3e;
   border-radius: 7px;
-  font-size: 1rem;
+  font-size:0.85rem;
   font-weight: 600;
   width: 32px;
   height: 32px;
@@ -478,7 +478,7 @@ small {
   background: transparent;
   border: 0;
   color: #a9bc92;
-  font-size:0.8rem;
+  font-size:0.7rem;
 }
 .profile {
   margin: 0 -18px;
@@ -495,7 +495,7 @@ small {
   color: #4b563e;
   width: 33px;
   height: 33px;
-  font-size:0.8rem;
+  font-size:0.7rem;
 }
 .profile > div {
   flex: 1;
@@ -504,7 +504,7 @@ small {
 .profile strong {
   display: block;
   color: #edf0e6;
-  font-size:0.9rem;
+  font-size:0.8rem;
 }
 .profile small {
   display: block;
@@ -576,7 +576,7 @@ small {
   margin-bottom: 8px;
 }
 .page-heading p {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: var(--muted);
   margin-bottom: 0;
 }
@@ -610,7 +610,7 @@ small {
   margin-top: 38px;
   border-top: 1px solid var(--line);
   padding-top: 19px;
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #91a087;
 }
 .page-footer > span:first-child {
@@ -764,7 +764,7 @@ small {
   margin-bottom: 14px;
 }
 .focus-top .eyebrow {
-  font-size: 13px;
+  font-size: 11px;
   letter-spacing: 1.3px;
 }
 .focus-card h3 {
@@ -859,7 +859,7 @@ small {
   margin: 8px 0 2px;
 }
 .stat-card small {
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #97a18f;
 }
 .course-grid {
@@ -932,7 +932,7 @@ small {
 .course-card p,
 .recording-card p {
   color: #8c9784;
-  font-size:0.8rem;
+  font-size:0.7rem;
   margin-bottom: 17px;
 }
 .course-foot {
@@ -941,7 +941,7 @@ small {
   justify-content: space-between;
   border-top: 1px solid #eef1ea;
   padding-top: 11px;
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #87967b;
 }
 .circle-arrow {
@@ -986,7 +986,7 @@ small {
 }
 .session-row > div > span {
   display: block;
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #929d88;
 }
 .session-row > svg {
@@ -1038,7 +1038,7 @@ small {
   z-index: 1;
 }
 .note-card > span:last-of-type {
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #ab9b7d;
 }
 .note-line {
@@ -1078,11 +1078,11 @@ small {
   padding: 12px 0;
   flex: 1;
   width: 100%;
-  font-size: 1rem;
+  font-size:0.85rem;
   outline-offset: 0;
 }
 .list-toolbar > select {
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .back-link {
   display: inline-block;
@@ -1140,7 +1140,7 @@ small {
   border: 0;
   border-bottom: 2px solid transparent;
   background: none;
-  font-size: 1rem;
+  font-size:0.85rem;
   padding: 13px 0;
   color: #899880;
 }
@@ -1176,7 +1176,7 @@ small {
   color: #829175;
 }
 .lesson-number {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #a0ad95;
   font-weight: 600;
 }
@@ -1195,7 +1195,7 @@ small {
 }
 .roster-row strong {
   display: block;
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .roster-row > div > span {
   display: block;
@@ -1242,12 +1242,12 @@ small {
   flex: 1;
 }
 .schedule-card .eyebrow {
-  font-size: 13px;
+  font-size: 11px;
   color: #879b76;
 }
 .schedule-card h3 {
   margin: 4px 0;
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .schedule-card p {
   font-size:0.9rem;
@@ -1280,7 +1280,7 @@ small {
   margin-top: 25px;
 }
 .live-room-art p {
-  font-size: 1rem;
+  font-size:0.85rem;
   max-width: 300px;
   margin-bottom: 25px;
 }
@@ -1294,7 +1294,7 @@ small {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #738466;
   margin: 16px 0;
 }
@@ -1401,7 +1401,7 @@ small {
   margin-top: 21px;
 }
 .lesson-sidebar p {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #86967a;
 }
 .lesson-sidebar .button {
@@ -1454,7 +1454,7 @@ small {
 }
 .assessment-heading .eyebrow {
   color: #8b9e7b;
-  font-size: 13px;
+  font-size: 12px;
 }
 .assessment-heading h3 {
   margin: 4px 0;
@@ -1466,7 +1466,7 @@ small {
 }
 .assessment-prompt {
   color: #748569;
-  font-size: 1rem;
+  font-size:0.85rem;
   max-width: 750px;
   margin: 22px 0;
 }
@@ -1489,7 +1489,7 @@ small {
 }
 .submission-row span:not(.avatar) {
   display: block;
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #8a9b7c;
   margin-top: 4px;
 }
@@ -1514,7 +1514,7 @@ small {
   padding: 20px;
 }
 .answer-box .eyebrow {
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #82996e;
 }
 .answer-box p {
@@ -1541,7 +1541,7 @@ th {
 td {
   padding: 16px 7px;
   border-bottom: 1px solid #edf1e7;
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 tr:last-child td {
   border-bottom: 0;
@@ -1586,7 +1586,7 @@ tr:last-child td {
   justify-content: space-between;
   gap: 15px;
   margin-top: 20px;
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #829373;
 }
 .settings-grid {
@@ -1607,7 +1607,7 @@ tr:last-child td {
   gap: 20px;
   padding: 17px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .setting-row:last-child {
   border: 0;
@@ -1621,10 +1621,10 @@ tr:last-child td {
   margin-top: 14px;
 }
 .report-row strong {
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .report-row p {
-  font-size: 1rem;
+  font-size:0.85rem;
   margin: 8px 0;
 }
 .platform-grid {
@@ -1668,11 +1668,11 @@ tr:last-child td {
 }
 .org-card strong {
   display: block;
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .org-card small {
   display: block;
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #869875;
   margin-top: 5px;
 }
@@ -1692,7 +1692,7 @@ tr:last-child td {
   font-weight: 500;
 }
 .mini-stats span {
-  font-size:0.8rem;
+  font-size:0.7rem;
   color: #91a080;
 }
 .toggle {
@@ -1788,7 +1788,7 @@ tr:last-child td {
   font-weight: 400;
 }
 .empty p {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #8b9a7f;
   max-width: 450px;
   margin: 0 auto 18px;
@@ -1845,7 +1845,7 @@ tr:last-child td {
   margin: 15px 0;
 }
 .error-text {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #a24f38;
 }
 .modal {
@@ -1905,7 +1905,7 @@ tr:last-child td {
 .field select,
 .field textarea {
   width: 100%;
-  font-size: 1rem;
+  font-size:0.85rem;
 }
 .field small {
   font-size:0.9rem;
@@ -1923,7 +1923,7 @@ tr:last-child td {
   margin-top: 10px;
 }
 .form > p {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #7a8c68;
 }
 .form fieldset {
@@ -1941,7 +1941,7 @@ tr:last-child td {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1rem;
+  font-size:0.85rem;
   line-height: 1.6;
   margin: 9px 0;
   color: #778a65;
@@ -1954,7 +1954,7 @@ tr:last-child td {
   margin-top: 2px;
 }
 .help-content p {
-  font-size: 1rem;
+  font-size:0.85rem;
   color: #829471;
   margin: 18px 0;
 }
@@ -1975,7 +1975,7 @@ tr:last-child td {
   z-index: 100;
   max-width: calc(100vw - 35px);
   width: max-content;
-  font-size: 1rem;
+  font-size:0.85rem;
   line-height: 1.6;
 }
 .toast svg {
@@ -2033,7 +2033,7 @@ tr:last-child td {
   }
   .hero-copy p,
   .hero-time {
-    font-size: 1rem;
+    font-size:0.85rem;
   }
 }
 @media (max-width: 1150px) {
@@ -2099,7 +2099,7 @@ tr:last-child td {
     padding: 16px 13px;
   }
   .stat-top {
-    font-size:0.8rem;
+    font-size:0.7rem;
   }
   .stat-card small {
     font-size: 13px;
@@ -2190,7 +2190,7 @@ tr:last-child td {
     font-size:0.76rem;
   }
   .stat-card small {
-    font-size:0.8rem;
+    font-size:0.7rem;
   }
   .stat-card {
     padding: 18px;
@@ -2243,7 +2243,7 @@ tr:last-child td {
   }
   .breadcrumb {
     gap: 7px;
-    font-size:0.8rem;
+    font-size:0.7rem;
   }
   .topbar-right {
     gap: 4px;
@@ -2290,7 +2290,7 @@ tr:last-child td {
     max-width: 210px;
   }
   .hero-time {
-    font-size:0.8rem;
+    font-size:0.7rem;
   }
   .sun {
     width: 59px;
@@ -2383,7 +2383,7 @@ tr:last-child td {
     gap: 0;
   }
   .demo-controls select {
-    font-size:0.8rem;
+    font-size:0.7rem;
     max-width: 145px;
   }
   .demo-bar {
@@ -2394,7 +2394,7 @@ tr:last-child td {
     gap: 8px;
   }
   .demo-controls button {
-    font-size:0.8rem;
+    font-size:0.7rem;
   }
   .demo-pill {
     font-size: 0.4375rem;
@@ -2476,7 +2476,7 @@ tr:last-child td {
   }
   .attendance-options button {
     padding: 7px 9px;
-    font-size:0.8rem;
+    font-size:0.7rem;
   }
   .table-person {
     gap: 7px;

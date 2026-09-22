@@ -32,6 +32,7 @@ export type Member = {
   role: "student" | "teacher";
   email: string;
 };
+export type LessonType = "video" | "audio" | "document" | "link" | "notes";
 export type Lesson = {
   id: string;
   orgId: string;
@@ -41,6 +42,9 @@ export type Lesson = {
   status: "draft" | "review" | "published";
   age: string;
   subject: string;
+  type?: LessonType;
+  url?: string;
+  content?: string;
   fileName?: string;
   completeBy: string[];
 };
@@ -253,6 +257,8 @@ export function makeSeed(): DemoState {
         status: "published",
         age: "13–15 years",
         subject: "Mathematics",
+        type: "video",
+        url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         completeBy: [],
       },
       {
@@ -264,6 +270,8 @@ export function makeSeed(): DemoState {
         status: "published",
         age: "13–15 years",
         subject: "Mathematics",
+        type: "notes",
+        content: "Linear equations with two variables form straight lines when graphed. Key concepts include slope (m), y-intercept (b), and finding the intersection of two lines.",
         completeBy: ["arjun"],
       },
       {
@@ -275,6 +283,8 @@ export function makeSeed(): DemoState {
         status: "published",
         age: "13–15 years",
         subject: "Science",
+        type: "document",
+        url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         completeBy: [],
       },
       {
@@ -286,6 +296,8 @@ export function makeSeed(): DemoState {
         status: "published",
         age: "13–15 years",
         subject: "English",
+        type: "link",
+        url: "https://en.wikipedia.org/wiki/Storytelling",
         completeBy: [],
       },
       {
@@ -297,6 +309,8 @@ export function makeSeed(): DemoState {
         status: "review",
         age: "13–15 years",
         subject: "Science",
+        type: "audio",
+        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
         completeBy: [],
       },
       {
@@ -308,6 +322,8 @@ export function makeSeed(): DemoState {
         status: "published",
         age: "12–14 years",
         subject: "Mathematics",
+        type: "video",
+        url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         completeBy: [],
       },
     ],
