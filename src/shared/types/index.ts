@@ -100,7 +100,7 @@ export type WorkspaceState = {
   reports: { orgId: string; lessonId: string; reason: string }[];
 };
 export type Viewer = {
-  name: ReactNode; orgId: string; role: Role; userId: string 
+  name?: string; orgId: string; role: Role; userId: string 
 };
 export const isTeacher = (role: Role) =>
   role === "teacher" || role === "teacher-admin";
