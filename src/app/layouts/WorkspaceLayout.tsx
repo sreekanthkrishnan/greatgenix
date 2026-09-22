@@ -1,3 +1,4 @@
+import { ProfileMenu } from "../../shared/components/ProfileMenu";
 import { useAuth } from "../providers/AuthProvider";
 import {
   roleContent,
@@ -14,7 +15,6 @@ import {
   Menu,
   Settings2,
   Sprout,
-  UserRound,
   Users,
   Video,
   X,
@@ -87,7 +87,6 @@ export function WorkspaceLayout() {
           ? [{ id: "settings", label: "Organization", icon: Settings2 }]
           : []),
       ];
-  nav.push({ id: "profile", label: "My profile", icon: UserRound });
   return (
     <div className="app production-app">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
@@ -139,17 +138,13 @@ export function WorkspaceLayout() {
             <p>{branding.tagline}</p>
           </div>
           <div className="profile">
-            <a
-              className="profile-link"
-              href="#/profile"
-              aria-label="Open my profile"
-            >
+            <div className="profile-link">
               <Avatar initials={initials} />
               <div>
                 <strong>{displayName}</strong>
                 <small>{copy.label}</small>
               </div>
-            </a>
+            </div>
             <button
               className="icon-button"
               aria-label="Sign out"
@@ -180,7 +175,9 @@ export function WorkspaceLayout() {
             <span>{org.name}</span>
             <span>/</span>
             <strong>
-              {nav.find((n) => n.id === route.split("/")[0])?.label}
+              {route.split("/")[0] === "profile"
+                ? "My profile"
+                : nav.find((n) => n.id === route.split("/")[0])?.label}
             </strong>
           </div>
           <div className="topbar-right">
@@ -192,13 +189,12 @@ export function WorkspaceLayout() {
                 day: "numeric",
               })}
             </span>
-            <a
-              href="#/profile"
-              className="topbar-profile"
-              aria-label="Edit my profile"
-            >
-              <Avatar initials={initials} small />
-            </a>
+            <ProfileMenu
+              name={displayName}
+              role={copy.label}
+              initials={initials}
+              route={route}
+            />
           </div>
         </header>
         <main className="main" key={`${viewer.orgId}-${viewer.role}-${route}`}>

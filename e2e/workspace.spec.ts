@@ -467,9 +467,13 @@ test("profile edits persist, update identity, support cancel and retain failed e
 }) => {
   const f = await fixture(page);
   await signIn(page);
-  await page
-    .getByRole("link", { name: "Edit my profile", exact: true })
-    .click();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: "My profile", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await page.getByRole("link", { name: "My profile", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "My profile", exact: true }),
   ).toBeVisible();
@@ -568,6 +572,12 @@ test("platform administrator has platform wording and editable profile", async (
   await expect(page.locator(".section-eyebrow")).toHaveText(
     "YOUR PLATFORM SPACE",
   );
+  await page.getByRole("button", { name: "Open profile menu" }).click();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Open profile menu" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Open profile menu" }).click();
   await page.getByRole("link", { name: "My profile", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Edit profile", exact: true }),

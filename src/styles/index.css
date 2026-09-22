@@ -3114,3 +3114,15 @@ body {
 .production-app .sidebar > * { flex-shrink: 0; }
 .production-app .profile > .profile-link { padding: 0; }
 .profile-link .avatar { flex-shrink: 0; }
+
+/* Account access lives in the header avatar. */
+.header-profile-menu { position: relative; }
+button.topbar-profile { padding: 6px; border: 1px solid transparent; background: transparent; color: var(--ink); min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { background: var(--sage); border-color: var(--line); }
+.profile-dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: 240px; max-width: calc(100vw - 32px); background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px #18281d20; padding: 8px; z-index: 40; }
+.profile-dropdown-identity { padding: 10px 12px 14px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
+.profile-dropdown-identity strong, .profile-dropdown-identity small { display: block; overflow-wrap: anywhere; }
+.profile-dropdown-identity strong { font-size: 14px; }
+.profile-dropdown-identity small { color: var(--muted); font-size: 12px; margin-top: 5px; }
+.profile-dropdown nav a { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; color: var(--ink); font-size: 14px; }
+.profile-dropdown nav a:hover, .profile-dropdown nav a:focus-visible { background: var(--sage); }
