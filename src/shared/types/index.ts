@@ -44,6 +44,7 @@ export type Member = {
   active?: boolean;
   email: string;
 };
+export type LessonType = "video" | "audio" | "document" | "link" | "notes";
 export type Lesson = {
   id: string;
   orgId: string;
@@ -54,6 +55,9 @@ export type Lesson = {
   mediaStatus?: string;
   age: string;
   subject: string;
+  type?: LessonType;
+  url?: string;
+  content?: string;
   fileName?: string;
   completeBy: string[];
 };

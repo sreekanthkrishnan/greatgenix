@@ -103,14 +103,14 @@ svg {
   flex-shrink: 0;
 }
 small {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
 }
 .muted {
   color: var(--muted);
   font-size: 0.8125rem;
 }
 .eyebrow {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   font-weight: 700;
   letter-spacing: 1.7px;
   line-height: 1.6;
@@ -122,7 +122,7 @@ small {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 11px 16px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -179,7 +179,7 @@ small {
   gap: 8px;
   align-items: center;
   color: var(--green);
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 .text-link:hover {
@@ -192,7 +192,7 @@ small {
   white-space: nowrap;
   border-radius: 5px;
   padding: 5px 8px;
-  font-size: 0.625rem;
+  font-size:0.9rem;
   font-weight: 600;
   line-height: 1.2;
   text-transform: capitalize;
@@ -217,7 +217,7 @@ small {
 .badge.light {
   background: #ffffff91;
   color: #3e5b3d;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   letter-spacing: 1px;
 }
 .status-dot {
@@ -241,14 +241,14 @@ small {
   border-radius: 50%;
   width: 39px;
   height: 39px;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 .avatar.small {
   width: 32px;
   height: 32px;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
 }
 .demo-bar {
   height: 42px;
@@ -264,7 +264,7 @@ small {
   top: 0;
   left: 0;
   right: 0;
-  font-size: 0.625rem;
+  font-size:0.9rem;
 }
 .demo-bar > div {
   display: flex;
@@ -272,7 +272,7 @@ small {
   align-items: center;
 }
 .demo-pill {
-  font-size: 0.5rem;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 1.3px;
   background: #d4dfca;
@@ -290,7 +290,7 @@ small {
   color: #53614e;
 }
 .demo-controls select {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   padding: 3px 25px 3px 8px;
   border-color: #ccd7c4;
   border-radius: 4px;
@@ -299,7 +299,7 @@ small {
   font-weight: 600;
 }
 .demo-controls button {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   border: 0;
   border-bottom: 1px solid #a5b49b;
   background: transparent;
@@ -384,7 +384,7 @@ small {
 .workspace-picker select {
   background: transparent;
   color: #edf1e9;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   border: 0;
   appearance: none;
   padding: 3px 0 0;
@@ -400,7 +400,7 @@ small {
   color: #b2c2aa;
 }
 .nav-caption {
-  font-size: 0.5rem;
+  font-size: 13px;
   letter-spacing: 1.4px;
   color: #94a68c;
   margin: 0 12px 14px;
@@ -417,7 +417,7 @@ small {
   gap: 12px;
   border-radius: 7px;
   padding: 11px 12px;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   color: #bacab2;
   position: relative;
 }
@@ -465,7 +465,7 @@ small {
   margin-bottom: 9px;
 }
 .sidebar-note p {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   color: #e0e7d6;
   line-height: 1.75;
   margin-bottom: 11px;
@@ -478,7 +478,7 @@ small {
   background: transparent;
   border: 0;
   color: #a9bc92;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
 }
 .profile {
   margin: 0 -18px;
@@ -495,7 +495,7 @@ small {
   color: #4b563e;
   width: 33px;
   height: 33px;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
 }
 .profile > div {
   flex: 1;
@@ -504,12 +504,12 @@ small {
 .profile strong {
   display: block;
   color: #edf0e6;
-  font-size: 0.625rem;
+  font-size:0.9rem;
 }
 .profile small {
   display: block;
   color: #a6b49e;
-  font-size: 0.5rem;
+  font-size: 13px;
   margin-top: 4px;
 }
 .profile > a {
@@ -534,7 +534,7 @@ small {
   display: flex;
   align-items: center;
   gap: 13px;
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #8a9487;
 }
 .breadcrumb strong {
@@ -550,7 +550,7 @@ small {
   gap: 19px;
 }
 .today {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #73816e;
 }
 .topbar .icon-button {
@@ -576,7 +576,7 @@ small {
   margin-bottom: 8px;
 }
 .page-heading p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--muted);
   margin-bottom: 0;
 }
@@ -610,7 +610,7 @@ small {
   margin-top: 38px;
   border-top: 1px solid var(--line);
   padding-top: 19px;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #91a087;
 }
 .page-footer > span:first-child {
@@ -653,7 +653,7 @@ small {
   color: #2b4b32;
 }
 .hero-copy p {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #66805e;
   margin-bottom: 10px;
   position: relative;
@@ -663,7 +663,7 @@ small {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #4c6849;
   margin-bottom: 20px;
 }
@@ -674,7 +674,7 @@ small {
   background: #344f38;
   color: white;
   padding: 10px 13px;
-  font-size: 0.625rem;
+  font-size:0.9rem;
 }
 .hero-art {
   position: absolute;
@@ -764,7 +764,7 @@ small {
   margin-bottom: 14px;
 }
 .focus-top .eyebrow {
-  font-size: 0.5rem;
+  font-size: 13px;
   letter-spacing: 1.3px;
 }
 .focus-card h3 {
@@ -777,7 +777,7 @@ small {
   margin-bottom: 10px;
 }
 .focus-card p {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #7e8b71;
   max-width: 200px;
   line-height: 1.8;
@@ -790,7 +790,7 @@ small {
   margin-bottom: 14px;
 }
 .focus-bottom > span {
-  font-size: 0.5rem;
+  font-size: 13px;
   color: #7b8b6e;
 }
 .avatar-stack {
@@ -812,7 +812,7 @@ small {
   background: #d5ccdf;
 }
 .focus-card > .text-link {
-  font-size: 0.625rem;
+  font-size:0.9rem;
 }
 .progress-track {
   height: 7px;
@@ -845,7 +845,7 @@ small {
   justify-content: space-between;
   gap: 10px;
   color: #7c8b72;
-  font-size: 0.625rem;
+  font-size:0.9rem;
 }
 .stat-top svg {
   color: #849976;
@@ -859,7 +859,7 @@ small {
   margin: 8px 0 2px;
 }
 .stat-card small {
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #97a18f;
 }
 .course-grid {
@@ -912,7 +912,7 @@ small {
   align-items: center;
   justify-content: space-between;
   gap: 9px;
-  font-size: 0.5rem;
+  font-size: 13px;
   color: #89947f;
   text-transform: uppercase;
   letter-spacing: 0.65px;
@@ -932,7 +932,7 @@ small {
 .course-card p,
 .recording-card p {
   color: #8c9784;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   margin-bottom: 17px;
 }
 .course-foot {
@@ -941,7 +941,7 @@ small {
   justify-content: space-between;
   border-top: 1px solid #eef1ea;
   padding-top: 11px;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #87967b;
 }
 .circle-arrow {
@@ -980,13 +980,13 @@ small {
 }
 .session-row strong {
   display: block;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   margin-bottom: 6px;
   font-weight: 600;
 }
 .session-row > div > span {
   display: block;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #929d88;
 }
 .session-row > svg {
@@ -1038,7 +1038,7 @@ small {
   z-index: 1;
 }
 .note-card > span:last-of-type {
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #ab9b7d;
 }
 .note-line {
@@ -1078,15 +1078,15 @@ small {
   padding: 12px 0;
   flex: 1;
   width: 100%;
-  font-size: 0.75rem;
+  font-size: 1rem;
   outline-offset: 0;
 }
 .list-toolbar > select {
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 .back-link {
   display: inline-block;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   color: #829171;
   margin-bottom: 22px;
 }
@@ -1128,7 +1128,7 @@ small {
   align-items: center;
   gap: 8px;
   color: #7e8f73;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
 }
 .tabs {
   display: flex;
@@ -1140,7 +1140,7 @@ small {
   border: 0;
   border-bottom: 2px solid transparent;
   background: none;
-  font-size: 0.75rem;
+  font-size: 1rem;
   padding: 13px 0;
   color: #899880;
 }
@@ -1172,11 +1172,11 @@ small {
   margin-bottom: 6px;
 }
 .lesson-row > div > span {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #829175;
 }
 .lesson-number {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #a0ad95;
   font-weight: 600;
 }
@@ -1195,11 +1195,11 @@ small {
 }
 .roster-row strong {
   display: block;
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 .roster-row > div > span {
   display: block;
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #8b9881;
   margin-top: 5px;
 }
@@ -1235,14 +1235,14 @@ small {
   font-weight: 500;
 }
 .date-block span {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   text-transform: uppercase;
 }
 .schedule-card > div:nth-child(2) {
   flex: 1;
 }
 .schedule-card .eyebrow {
-  font-size: 0.5rem;
+  font-size: 13px;
   color: #879b76;
 }
 .schedule-card h3 {
@@ -1250,7 +1250,7 @@ small {
   font-size: 1rem;
 }
 .schedule-card p {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #8d9b82;
   margin: 0;
 }
@@ -1280,7 +1280,7 @@ small {
   margin-top: 25px;
 }
 .live-room-art p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   max-width: 300px;
   margin-bottom: 25px;
 }
@@ -1294,7 +1294,7 @@ small {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #738466;
   margin: 16px 0;
 }
@@ -1303,7 +1303,7 @@ small {
   margin: 10px 0 20px;
 }
 .live-room-details > .muted {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   line-height: 1.9;
 }
 .recording-grid {
@@ -1336,14 +1336,14 @@ small {
   background: #253d30b8;
   color: #fff;
   padding: 4px 6px;
-  font-size: 0.5rem;
+  font-size: 13px;
   border-radius: 3px;
 }
 .recording-card h3 {
   min-height: 42px;
 }
 .recording-card .badge {
-  font-size: 0.5rem;
+  font-size: 13px;
   letter-spacing: 0;
   text-transform: capitalize;
 }
@@ -1392,7 +1392,7 @@ small {
   justify-content: space-between;
   background: #26412aab;
   color: #fff;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
 }
 .lesson-sidebar h3 {
   font-family: Georgia, serif;
@@ -1401,7 +1401,7 @@ small {
   margin-top: 21px;
 }
 .lesson-sidebar p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #86967a;
 }
 .lesson-sidebar .button {
@@ -1423,14 +1423,14 @@ small {
   align-items: center;
   gap: 6px;
   color: #698953;
-  font-size: 0.625rem;
+  font-size:0.9rem;
 }
 .lesson-sidebar > .check-label {
   margin-top: 14px;
 }
 .review-check {
   align-items: flex-start !important;
-  font-size: 0.6875rem !important;
+  font-size:0.76rem !important;
   margin-top: 21px !important;
 }
 .assessment-list {
@@ -1454,19 +1454,19 @@ small {
 }
 .assessment-heading .eyebrow {
   color: #8b9e7b;
-  font-size: 0.5rem;
+  font-size: 13px;
 }
 .assessment-heading h3 {
   margin: 4px 0;
 }
 .assessment-heading p {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #8a9b7c;
   margin: 0;
 }
 .assessment-prompt {
   color: #748569;
-  font-size: 0.75rem;
+  font-size: 1rem;
   max-width: 750px;
   margin: 22px 0;
 }
@@ -1485,11 +1485,11 @@ small {
 }
 .submission-row strong {
   display: block;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
 }
 .submission-row span:not(.avatar) {
   display: block;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #8a9b7c;
   margin-top: 4px;
 }
@@ -1503,7 +1503,7 @@ small {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   color: #6d8c5c;
   max-width: 600px;
   margin-bottom: 0;
@@ -1514,7 +1514,7 @@ small {
   padding: 20px;
 }
 .answer-box .eyebrow {
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #82996e;
 }
 .answer-box p {
@@ -1532,7 +1532,7 @@ table {
   text-align: left;
 }
 th {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   font-weight: 500;
   color: #859677;
   border-bottom: 1px solid var(--line);
@@ -1541,7 +1541,7 @@ th {
 td {
   padding: 16px 7px;
   border-bottom: 1px solid #edf1e7;
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 tr:last-child td {
   border-bottom: 0;
@@ -1562,7 +1562,7 @@ tr:last-child td {
   background: #fff;
   border-radius: 6px;
   padding: 7px 12px;
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #8a9a7b;
 }
 .attendance-options .selected.present {
@@ -1586,7 +1586,7 @@ tr:last-child td {
   justify-content: space-between;
   gap: 15px;
   margin-top: 20px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #829373;
 }
 .settings-grid {
@@ -1598,7 +1598,7 @@ tr:last-child td {
   font-size: 1.125rem;
 }
 .settings-grid .muted {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
 }
 .setting-row {
   display: flex;
@@ -1607,7 +1607,7 @@ tr:last-child td {
   gap: 20px;
   padding: 17px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 .setting-row:last-child {
   border: 0;
@@ -1621,10 +1621,10 @@ tr:last-child td {
   margin-top: 14px;
 }
 .report-row strong {
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 .report-row p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   margin: 8px 0;
 }
 .platform-grid {
@@ -1668,11 +1668,11 @@ tr:last-child td {
 }
 .org-card strong {
   display: block;
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 .org-card small {
   display: block;
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #869875;
   margin-top: 5px;
 }
@@ -1692,7 +1692,7 @@ tr:last-child td {
   font-weight: 500;
 }
 .mini-stats span {
-  font-size: 0.5625rem;
+  font-size:0.8rem;
   color: #91a080;
 }
 .toggle {
@@ -1720,7 +1720,7 @@ tr:last-child td {
   transform: translateX(18px);
 }
 .fine-print {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   color: #95a386;
   margin-top: 19px;
 }
@@ -1788,7 +1788,7 @@ tr:last-child td {
   font-weight: 400;
 }
 .empty p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #8b9a7f;
   max-width: 450px;
   margin: 0 auto 18px;
@@ -1828,7 +1828,7 @@ tr:last-child td {
   border-radius: 8px;
   padding: 13px 15px;
   color: #738661;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   line-height: 1.7;
 }
 .notice svg {
@@ -1839,13 +1839,13 @@ tr:last-child td {
   background: #faf0e4;
   border: 1px solid #ead8be;
   color: #977749;
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   line-height: 1.7;
   border-radius: 8px;
   margin: 15px 0;
 }
 .error-text {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #a24f38;
 }
 .modal {
@@ -1877,7 +1877,7 @@ tr:last-child td {
   margin-bottom: 8px;
 }
 .modal-heading p {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   color: #8b9b7c;
   margin: 0;
 }
@@ -1897,7 +1897,7 @@ tr:last-child td {
   min-width: 0;
 }
 .field > span {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   font-weight: 600;
   color: #6e815d;
 }
@@ -1905,10 +1905,10 @@ tr:last-child td {
 .field select,
 .field textarea {
   width: 100%;
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 .field small {
-  font-size: 0.625rem;
+  font-size:0.9rem;
   line-height: 1.6;
   color: #9aa98d;
 }
@@ -1923,7 +1923,7 @@ tr:last-child td {
   margin-top: 10px;
 }
 .form > p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #7a8c68;
 }
 .form fieldset {
@@ -1932,7 +1932,7 @@ tr:last-child td {
   border-radius: 8px;
 }
 .form legend {
-  font-size: 0.6875rem;
+  font-size:0.76rem;
   font-weight: 600;
   padding: 0 6px;
   color: #6f835d;
@@ -1941,7 +1941,7 @@ tr:last-child td {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   line-height: 1.6;
   margin: 9px 0;
   color: #778a65;
@@ -1954,7 +1954,7 @@ tr:last-child td {
   margin-top: 2px;
 }
 .help-content p {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: #829471;
   margin: 18px 0;
 }
@@ -1975,7 +1975,7 @@ tr:last-child td {
   z-index: 100;
   max-width: calc(100vw - 35px);
   width: max-content;
-  font-size: 0.75rem;
+  font-size: 1rem;
   line-height: 1.6;
 }
 .toast svg {
@@ -2033,7 +2033,7 @@ tr:last-child td {
   }
   .hero-copy p,
   .hero-time {
-    font-size: 0.75rem;
+    font-size: 1rem;
   }
 }
 @media (max-width: 1150px) {
@@ -2099,10 +2099,10 @@ tr:last-child td {
     padding: 16px 13px;
   }
   .stat-top {
-    font-size: 0.5625rem;
+    font-size:0.8rem;
   }
   .stat-card small {
-    font-size: 0.5rem;
+    font-size: 13px;
   }
   .page-heading h1 {
     font-size: 1.875rem;
@@ -2111,7 +2111,7 @@ tr:last-child td {
     padding: 16px 10px;
   }
   .page-heading > .button {
-    font-size: 0.6875rem;
+    font-size:0.76rem;
     padding: 10px 12px;
   }
   .dashboard-top {
@@ -2187,10 +2187,10 @@ tr:last-child td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .stat-top {
-    font-size: 0.6875rem;
+    font-size:0.76rem;
   }
   .stat-card small {
-    font-size: 0.5625rem;
+    font-size:0.8rem;
   }
   .stat-card {
     padding: 18px;
@@ -2243,7 +2243,7 @@ tr:last-child td {
   }
   .breadcrumb {
     gap: 7px;
-    font-size: 0.5625rem;
+    font-size:0.8rem;
   }
   .topbar-right {
     gap: 4px;
@@ -2267,7 +2267,7 @@ tr:last-child td {
     font-size: 1.8125rem;
   }
   .page-heading p {
-    font-size: 0.6875rem;
+    font-size:0.76rem;
   }
   .page-heading > .button {
     margin-top: 0;
@@ -2290,7 +2290,7 @@ tr:last-child td {
     max-width: 210px;
   }
   .hero-time {
-    font-size: 0.5625rem;
+    font-size:0.8rem;
   }
   .sun {
     width: 59px;
@@ -2351,11 +2351,11 @@ tr:last-child td {
     min-height: 40px;
   }
   .course-card p {
-    font-size: 0.5rem;
+    font-size: 13px;
     margin-bottom: 12px;
   }
   .course-foot {
-    font-size: 0.5rem;
+    font-size: 13px;
   }
   .circle-arrow {
     height: 21px;
@@ -2368,14 +2368,14 @@ tr:last-child td {
     gap: 10px;
   }
   .section-heading .button {
-    font-size: 0.625rem;
+    font-size:0.9rem;
     padding: 8px 10px;
   }
   .dashboard-bottom .panel {
     padding: 19px;
   }
   .page-footer {
-    font-size: 0.5rem;
+    font-size: 13px;
     gap: 12px;
   }
   .demo-controls label {
@@ -2383,7 +2383,7 @@ tr:last-child td {
     gap: 0;
   }
   .demo-controls select {
-    font-size: 0.5625rem;
+    font-size:0.8rem;
     max-width: 145px;
   }
   .demo-bar {
@@ -2394,7 +2394,7 @@ tr:last-child td {
     gap: 8px;
   }
   .demo-controls button {
-    font-size: 0.5625rem;
+    font-size:0.8rem;
   }
   .demo-pill {
     font-size: 0.4375rem;
@@ -2404,7 +2404,7 @@ tr:last-child td {
     left: 50%;
     max-width: calc(100vw - 28px);
     bottom: 17px;
-    font-size: 0.6875rem;
+    font-size:0.76rem;
   }
   .list-toolbar {
     flex-wrap: wrap;
@@ -2423,7 +2423,7 @@ tr:last-child td {
   }
   .schedule-card > .button {
     margin-left: 71px;
-    font-size: 0.6875rem;
+    font-size:0.76rem;
     padding: 9px 12px;
   }
   .course-detail-hero > div:first-child {
@@ -2469,18 +2469,18 @@ tr:last-child td {
   }
   .submission-row > .button {
     margin-left: 43px;
-    font-size: 0.625rem;
+    font-size:0.9rem;
   }
   .table-wrap {
     margin: 0 -10px;
   }
   .attendance-options button {
     padding: 7px 9px;
-    font-size: 0.5625rem;
+    font-size:0.8rem;
   }
   .table-person {
     gap: 7px;
-    font-size: 0.625rem;
+    font-size:0.9rem;
   }
   .table-person .avatar {
     width: 26px;
@@ -2492,7 +2492,7 @@ tr:last-child td {
   }
   .save-bar {
     flex-wrap: wrap;
-    font-size: 0.6875rem;
+    font-size:0.76rem;
   }
   .platform-grid {
     gap: 16px;
@@ -2524,7 +2524,7 @@ tr:last-child td {
   }
   .video-caption {
     padding: 11px;
-    font-size: 0.625rem;
+    font-size:0.9rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2563,7 +2563,7 @@ body {
 }
 .production-app .brand small {
   letter-spacing: 0.12em;
-  font-size: 0.5rem;
+  font-size: 13px;
   color: inherit;
   opacity: 0.7;
 }
