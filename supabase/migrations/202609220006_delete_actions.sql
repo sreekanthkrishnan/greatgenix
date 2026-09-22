@@ -1,4 +1,4 @@
-create or replace function private.require(ok boolean, message text default 'This action is not allowed') returns void language plpgsql set search_path='' as $$ begin if not coalesce(ok,false) then raise exception '%',message using errcode='42501'; end if; end $$;
+-- Migration 0006: Add delete-course and delete-session support in apply_action RPC
 create or replace function public.apply_action(p_org uuid,p_action jsonb) returns void language plpgsql security definer set search_path='' as $$
 declare
  t text := p_action->>'type'; d jsonb; c uuid; target uuid; l public.lessons; a public.assignments; s public.submissions; b jsonb; pair record; old_role text;
@@ -16,7 +16,7 @@ begin
    insert into public.courses(id,"orgId",title,subject,grade,batch,description,color,"teacherId") values((d->>'id')::uuid,p_org,trim(d->>'title'),d->>'subject',d->>'grade',d->>'batch',d->>'description',d->>'color',(d->>'teacherId')::uuid);
   when 'delete-course' then
    target:=(p_action->>'id')::uuid;
-   perform private.require(private.can_course(p_org,target,true));
+   perform private.require(private.can_course(p_org,target,true),'Permission denied to delete course');
    delete from public.enrollments where "orgId"=p_org and "courseId"=target;
    delete from public.attendance where "orgId"=p_org and "sessionId" in (select id from public.sessions where "courseId"=target);
    delete from public.sessions where "orgId"=p_org and "courseId"=target;
@@ -33,7 +33,7 @@ begin
   when 'delete-session' then
    target:=(p_action->>'id')::uuid;
    select "courseId" into c from public.sessions where id=target and "orgId"=p_org;
-   perform private.require(c is not null and private.can_course(p_org,c,true));
+   perform private.require(c is not null and private.can_course(p_org,c,true),'Permission denied to delete session');
    delete from public.attendance where "orgId"=p_org and "sessionId"=target;
    delete from public.sessions where id=target and "orgId"=p_org;
   when 'lesson' then
@@ -79,7 +79,6 @@ begin
    update public.organizations set branding=jsonb_build_object('primaryColor',b->>'primaryColor','accentColor',b->>'accentColor','fontFamily',b->>'fontFamily','fontSize',(b->>'fontSize')::int,'theme',b->>'theme','tagline',b->>'tagline','logoUrl',b->>'logoUrl') where id=p_org;
   when 'feature' then
    perform private.require((p_action->>'orgId')::uuid=p_org and (private.is_admin(p_org) or private.is_platform()) and p_action->>'feature' in ('live','recordings','attendance','assessments') and jsonb_typeof(p_action->'enabled')='boolean');
-   -- Attendance sessions use the live-class calendar. Disable dependents atomically.
    if p_action->>'feature'='attendance' and (p_action->>'enabled')::boolean then perform private.require(private.feature(p_org,'live'),'Enable live classes before attendance'); end if;
    update public.organizations set features=jsonb_set(features,array[p_action->>'feature'],p_action->'enabled') where id=p_org;
    if p_action->>'feature'='live' and not (p_action->>'enabled')::boolean then update public.organizations set features=jsonb_set(features,'{attendance}','false') where id=p_org; end if;
@@ -100,7 +99,6 @@ begin
    update public.courses set "teacherId"=target where id=c and "orgId"=p_org;
   when 'membership' then
    perform private.require(private.is_admin(p_org)); target:=(p_action->>'userId')::uuid;
-   -- Serialize admin changes to prevent two concurrent requests removing the last admin.
    perform 1 from public.organizations where id=p_org for update;
    select role into old_role from public.memberships where "orgId"=p_org and "userId"=target;
    perform private.require(old_role is not null);
@@ -114,11 +112,6 @@ begin
    if p_action->>'role'<>'student' then delete from public.enrollments where "orgId"=p_org and "studentId"=target; end if;
   else raise exception 'Unknown operation';
   end case;
- end if;
+  end if;
  insert into public.audit_events("orgId","actorId",action,"targetId") values(p_org,auth.uid(),t,coalesce(p_action->>'id',p_action->>'userId',p_action->>'courseId',p_action->>'sessionId',p_action->>'lessonId'));
 end $$;
--- Explicit allowlist. SECURITY DEFINER functions never inherit PUBLIC execute.
-revoke all on all functions in schema private from public,anon;
-grant execute on all functions in schema private to authenticated;
-revoke all on function public.my_access(),public.create_organization(text,text),public.create_invitation(uuid,text,text,text,uuid),public.accept_invitation(text),public.revoke_invitation(uuid),public.apply_action(uuid,jsonb) from public,anon;
-grant execute on function public.my_access(),public.create_organization(text,text),public.create_invitation(uuid,text,text,text,uuid),public.accept_invitation(text),public.revoke_invitation(uuid),public.apply_action(uuid,jsonb) to authenticated;

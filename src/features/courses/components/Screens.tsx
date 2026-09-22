@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   Sparkles,
+  Trash2,
   Users,
   Video,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
   CourseArt,
   CourseCard,
   Empty,
+  Modal,
   PageHeading,
   SectionHeading,
   Unavailable,
@@ -395,11 +397,12 @@ export function Courses() {
   );
 }
 export function CourseDetail({ id }: { id: string }) {
-  const { state, viewer } = useWorkspace();
+  const { state, viewer, act, busy } = useWorkspace();
   const { courses, lessons, teacher } = useScope();
   const course = courses.find((c) => c.id === id);
   const [tab, setTab] = useState("lessons");
   const [form, setForm] = useState<FormKind | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   if (!course)
     return (
       <Unavailable
@@ -407,10 +410,22 @@ export function CourseDetail({ id }: { id: string }) {
         text="Switch back to your courses to see what is available in this role and organization."
       />
     );
+  const canDelete = canAdmin(viewer.role) || course.teacherId === viewer.userId;
   const list = lessons.filter((l) => l.courseId === id);
   const roster = state.members.filter(
     (m) => m.orgId === viewer.orgId && course.studentIds.includes(m.id),
   );
+
+  async function handleDeleteCourse() {
+    const ok = await act(
+      { type: "delete-course", id: course!.id },
+      "Course deleted successfully.",
+    );
+    if (ok) {
+      location.hash = "#/courses";
+    }
+  }
+
   return (
     <>
       <a className="back-link" href="#/courses">
@@ -428,6 +443,17 @@ export function CourseDetail({ id }: { id: string }) {
             {course.studentIds.length} learners<span>·</span>
             {course.batch}
           </div>
+          {canDelete && (
+            <div style={{ marginTop: "1.25rem" }}>
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmDelete(true)}
+                disabled={busy}
+              >
+                <Trash2 size={16} /> Delete course
+              </Button>
+            </div>
+          )}
         </div>
         <CourseArt color={course.color} large />
       </div>
@@ -576,6 +602,21 @@ export function CourseDetail({ id }: { id: string }) {
       )}
       {form && (
         <ActionForm kind={form} courseId={id} close={() => setForm(null)} />
+      )}
+      {confirmDelete && (
+        <Modal title="Delete Course?" close={() => setConfirmDelete(false)}>
+          <p style={{ marginBottom: "1.25rem", color: "var(--text-color, currentColor)" }}>
+            Are you sure you want to delete <strong>{course.title}</strong>? This action cannot be undone and will permanently remove this course along with all associated lessons, class schedules, assignments, and enrollment records.
+          </p>
+          <div className="form-actions">
+            <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteCourse} disabled={busy}>
+              {busy ? "Deleting…" : "Yes, delete course"}
+            </Button>
+          </div>
+        </Modal>
       )}
     </>
   );

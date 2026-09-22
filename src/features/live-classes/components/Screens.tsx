@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Clock3,
   Plus,
+  Trash2,
   Users,
   Video,
 } from "lucide-react";
@@ -12,6 +13,7 @@ import {
   Badge,
   Button,
   Empty,
+  Modal,
   Notice,
   PageHeading,
   Unavailable,
@@ -20,12 +22,13 @@ import {
 } from "../../../shared/components";
 import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
-import { available } from "../../../shared/types";
+import { available, canAdmin } from "../../../shared/types";
 
 export function Sessions({ id }: { id?: string }) {
-  const { state, viewer } = useWorkspace();
+  const { state, viewer, act, busy } = useWorkspace();
   const { sessions, teacher } = useScope();
   const [form, setForm] = useState(false);
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   if (!available(state, viewer, "live")) return <Unavailable />;
   const session = id ? sessions.find((s) => s.id === id) : undefined;
   if (id && !session)
@@ -59,8 +62,24 @@ export function Sessions({ id }: { id?: string }) {
     window.open(meetingUrl, "_blank", "noopener,noreferrer");
   }
 
+  async function handleDeleteSession(targetId?: string) {
+    const sid = targetId || session?.id || deleteSessionId;
+    if (!sid) return;
+    const ok = await act(
+      { type: "delete-session", id: sid },
+      "Class session deleted.",
+    );
+    if (ok) {
+      setDeleteSessionId(null);
+      if (session) {
+        location.hash = "#/sessions";
+      }
+    }
+  }
+
   if (session) {
-    const course = state.courses.find((c) => c.id === session.courseId)!;
+    const course = state.courses.find((c) => c.id === session.courseId);
+    const canDeleteSession = teacher && (canAdmin(viewer.role) || course?.teacherId === viewer.userId);
     return (
       <>
         <a className="back-link" href="#/sessions">
@@ -69,7 +88,7 @@ export function Sessions({ id }: { id?: string }) {
         <PageHeading
           eyebrow="LEARN TOGETHER"
           title={session.title}
-          description={`${course.subject} · ${course.grade} · ${course.batch}`}
+          description={`${course?.subject || "Subject"} · ${course?.grade || "Grade"} · ${course?.batch || "Batch"}`}
         />
         <div className="live-room">
           <div className="live-room-art">
@@ -92,7 +111,7 @@ export function Sessions({ id }: { id?: string }) {
             </div>
             <div className="detail-row">
               <Users size={18} />
-              <span>{course.studentIds.length} enrolled learners</span>
+              <span>{course?.studentIds.length || 0} enrolled learners</span>
             </div>
             <div className="detail-row">
               <Video size={18} />
@@ -109,15 +128,41 @@ export function Sessions({ id }: { id?: string }) {
               Times follow your browser’s local time zone. Clicking join opens
               the meeting link in a new tab.
             </p>
-            <Button onClick={join}>
-              <Video size={17} />
-              {teacher ? `Start / ${platform.label}` : platform.label}
-            </Button>
-            <a className="text-link" href={`#/courses/${course.id}`}>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+              <Button onClick={join}>
+                <Video size={17} />
+                {teacher ? `Start / ${platform.label}` : platform.label}
+              </Button>
+              {canDeleteSession && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setDeleteSessionId(session.id)}
+                  disabled={busy}
+                >
+                  <Trash2 size={16} /> Delete class
+                </Button>
+              )}
+            </div>
+            <a className="text-link" href={`#/courses/${course?.id}`}>
               Visit course <ArrowUpRight size={15} />
             </a>
           </div>
         </div>
+        {deleteSessionId && (
+          <Modal title="Delete Scheduled Class?" close={() => setDeleteSessionId(null)}>
+            <p style={{ marginBottom: "1.25rem", color: "var(--text-color, currentColor)" }}>
+              Are you sure you want to delete this scheduled class session? This action will remove the session from the calendar and delete its attendance records.
+            </p>
+            <div className="form-actions">
+              <Button variant="secondary" onClick={() => setDeleteSessionId(null)}>
+                Cancel
+              </Button>
+              <Button onClick={() => handleDeleteSession(deleteSessionId)} disabled={busy}>
+                {busy ? "Deleting…" : "Yes, delete class"}
+              </Button>
+            </div>
+          </Modal>
+        )}
       </>
     );
   }
@@ -140,31 +185,45 @@ export function Sessions({ id }: { id?: string }) {
         Live classes support any video conferencing link (Google Meet, Zoom, MS Teams, etc.).
       </Notice>
       <div className="schedule-list">
-        {sessions.map((s) => (
-          <div className="schedule-card" key={s.id}>
-            <div className="date-block">
-              <strong>{new Date(`${s.date}T12:00`).getDate()}</strong>
-              <span>
-                {new Date(`${s.date}T12:00`).toLocaleDateString("en-IN", {
-                  month: "short",
-                })}
-              </span>
+        {sessions.map((s) => {
+          const c = state.courses.find((course) => course.id === s.courseId);
+          const canDeleteThisSession = teacher && (canAdmin(viewer.role) || c?.teacherId === viewer.userId);
+          return (
+            <div className="schedule-card" key={s.id}>
+              <div className="date-block">
+                <strong>{new Date(`${s.date}T12:00`).getDate()}</strong>
+                <span>
+                  {new Date(`${s.date}T12:00`).toLocaleDateString("en-IN", {
+                    month: "short",
+                  })}
+                </span>
+              </div>
+              <div>
+                <span className="eyebrow">
+                  {timeLabel(s.time)} · {s.duration} MIN
+                </span>
+                <h3>{s.title}</h3>
+                <p>
+                  {c?.subject} · Live session
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                {canDeleteThisSession && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDeleteSessionId(s.id)}
+                    disabled={busy}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                )}
+                <a className="button secondary" href={`#/sessions/${s.id}`}>
+                  View session <ArrowUpRight size={16} />
+                </a>
+              </div>
             </div>
-            <div>
-              <span className="eyebrow">
-                {timeLabel(s.time)} · {s.duration} MIN
-              </span>
-              <h3>{s.title}</h3>
-              <p>
-                {state.courses.find((c) => c.id === s.courseId)?.subject} · Live
-                session
-              </p>
-            </div>
-            <a className="button secondary" href={`#/sessions/${s.id}`}>
-              View session <ArrowUpRight size={16} />
-            </a>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {!sessions.length && (
         <Empty
@@ -173,6 +232,21 @@ export function Sessions({ id }: { id?: string }) {
         />
       )}
       {form && <ActionForm kind="session" close={() => setForm(false)} />}
+      {deleteSessionId && (
+        <Modal title="Delete Scheduled Class?" close={() => setDeleteSessionId(null)}>
+          <p style={{ marginBottom: "1.25rem", color: "var(--text-color, currentColor)" }}>
+            Are you sure you want to delete this scheduled class session? This action will remove the session from the calendar and delete its attendance records.
+          </p>
+          <div className="form-actions">
+            <Button variant="secondary" onClick={() => setDeleteSessionId(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => handleDeleteSession(deleteSessionId)} disabled={busy}>
+              {busy ? "Deleting…" : "Yes, delete class"}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
