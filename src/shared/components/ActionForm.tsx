@@ -27,6 +27,19 @@ export function ActionForm({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [lessonType, setLessonType] = useState<LessonType>("video");
+  const [docFileUrl, setDocFileUrl] = useState("");
+  const [docFileName, setDocFileName] = useState("");
+
+  function handleDocumentFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDocFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDocFileUrl(String(reader.result));
+    };
+    reader.readAsDataURL(file);
+  }
   const courses = state.courses.filter((c) => canSeeCourse(c, viewer));
   if (kind === "member")
     return <InviteForm close={close} courseId={courseId} />;
@@ -93,7 +106,8 @@ export function ActionForm({
         case "recording":
           {
             const type = (value("type") as LessonType) || "video";
-            const url = value("url");
+            const url = type === "document" && docFileUrl ? docFileUrl : value("url");
+            const fileName = type === "document" && docFileName ? docFileName : undefined;
             const content = value("content");
             ok = await act({
               type: "lesson",
@@ -109,6 +123,7 @@ export function ActionForm({
                 status: "published",
                 type,
                 url,
+                fileName,
                 content,
                 completeBy: [],
               },
@@ -253,12 +268,35 @@ export function ActionForm({
               >
                 <option value="video">Video (YouTube, Vimeo, MP4 URL)</option>
                 <option value="audio">Audio (MP3, SoundCloud, Podcast URL)</option>
-                <option value="document">Document (PDF / Document URL)</option>
+                <option value="document">Document (Upload File or PDF URL)</option>
                 <option value="link">Link (External web resource)</option>
                 <option value="notes">Notes (Text / Markdown content)</option>
               </select>
             </Field>
-            {lessonType !== "notes" ? (
+            {lessonType === "document" ? (
+              <>
+                <Field label="Upload Document File (PDF, DOC, Images, TXT)">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,image/*"
+                    onChange={handleDocumentFileChange}
+                  />
+                  {docFileName && (
+                    <span className="muted" style={{ fontSize: "0.85rem", marginTop: "4px", display: "block" }}>
+                      Selected file: <strong>{docFileName}</strong>
+                    </span>
+                  )}
+                </Field>
+                <Field label="Or Document Web URL">
+                  <input
+                    name="url"
+                    type="url"
+                    required={!docFileUrl}
+                    placeholder="https://example.com/document.pdf"
+                  />
+                </Field>
+              </>
+            ) : lessonType !== "notes" ? (
               <Field label={`${lessonType.charAt(0).toUpperCase() + lessonType.slice(1)} URL`}>
                 <input
                   name="url"
@@ -269,9 +307,7 @@ export function ActionForm({
                       ? "https://www.youtube.com/watch?v=... or https://vimeo.com/..."
                       : lessonType === "audio"
                         ? "https://example.com/audio.mp3"
-                        : lessonType === "document"
-                          ? "https://example.com/document.pdf"
-                          : "https://example.com/resource"
+                        : "https://example.com/resource"
                   }
                 />
               </Field>
@@ -303,7 +339,7 @@ export function ActionForm({
               />
             </Field>
             <Notice>
-              Lessons support YouTube videos, audio streams, documents, links, and text notes. No video file upload is required.
+              Lessons support YouTube/Vimeo video links, audio links, uploaded document files/URLs, external links, and text notes.
             </Notice>
           </>
         )}

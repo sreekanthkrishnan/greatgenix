@@ -57,34 +57,56 @@ export function ResourceViewer({ lesson }: { lesson: Lesson }) {
   }
 
   if (type === "document") {
-    const isPdf = url.toLowerCase().includes(".pdf");
+    const isPdf = url.toLowerCase().includes(".pdf") || url.startsWith("data:application/pdf");
+    const isImage = url.startsWith("data:image/") || /\.(png|jpe?g|webp|gif)$/i.test(url);
+    const fileName = lesson.fileName || "Course Document";
+
     return (
       <div className="media-player-container">
         {url && isPdf ? (
-          <iframe
-            src={url}
-            title={lesson.title}
-            style={{ width: "100%", height: "540px", border: "0", borderRadius: "10px" }}
-          />
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <span className="muted" style={{ fontWeight: 600 }}>{fileName}</span>
+              <a
+                href={url}
+                download={fileName}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-link"
+              >
+                Download PDF <ArrowUpRight size={14} />
+              </a>
+            </div>
+            <iframe
+              src={url}
+              title={lesson.title}
+              style={{ width: "100%", height: "540px", border: "0", borderRadius: "10px" }}
+            />
+          </div>
+        ) : url && isImage ? (
+          <div className="panel" style={{ padding: "20px", textAlign: "center" }}>
+            <img src={url} alt={lesson.title} style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "8px" }} />
+          </div>
         ) : (
           <div className="panel" style={{ padding: "32px", textAlign: "center" }}>
             <FileText size={40} style={{ color: "var(--green)", marginBottom: "16px" }} />
-            <h3 style={{ marginBottom: "8px" }}>Lesson Document</h3>
+            <h3 style={{ marginBottom: "8px" }}>{fileName}</h3>
             <p className="muted" style={{ marginBottom: "20px" }}>
               View or download the course document below.
             </p>
             {url ? (
               <a
                 href={url}
+                download={fileName}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="button"
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
               >
-                Open Document <ArrowUpRight size={16} />
+                Open / Download Document <ArrowUpRight size={16} />
               </a>
             ) : (
-              <p className="muted">No document URL available.</p>
+              <p className="muted">No document file available.</p>
             )}
           </div>
         )}
