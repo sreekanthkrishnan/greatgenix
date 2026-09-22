@@ -1,4 +1,5 @@
-import { ArrowUpRight, ExternalLink, FileText, Play, Volume2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, Download, ExternalLink, FileText, Play, Volume2 } from "lucide-react";
 import type { Lesson } from "../../../shared/types";
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -11,6 +12,150 @@ function getVimeoEmbedUrl(url: string): string | null {
   const regExp = /(?:vimeo\.com\/)(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)/;
   const match = url.match(regExp);
   return match && match[3] ? `https://player.vimeo.com/video/${match[3]}` : null;
+}
+
+function dataURLtoBlob(dataurl: string): Blob | null {
+  try {
+    const arr = dataurl.split(",");
+    if (arr.length < 2) return null;
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch {
+    return null;
+  }
+}
+
+function DocumentViewer({ url, title, fileName }: { url: string; title: string; fileName: string }) {
+  const [blobUrl, setBlobUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (url.startsWith("data:")) {
+      const blob = dataURLtoBlob(url);
+      if (blob) {
+        const objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+        return () => {
+          URL.revokeObjectURL(objectUrl);
+        };
+      }
+    }
+    setBlobUrl(url);
+  }, [url]);
+
+  const activeUrl = blobUrl || url;
+
+  // Google Drive URL converter (/view -> /preview)
+  let embedUrl = activeUrl;
+  if (activeUrl.includes("drive.google.com/file/d/")) {
+    embedUrl = activeUrl.replace(/\/view(\?.*)?$/, "/preview");
+  }
+
+  const isPdf = activeUrl.toLowerCase().includes(".pdf") || url.startsWith("data:application/pdf");
+  const isImage = url.startsWith("data:image/") || /\.(png|jpe?g|webp|gif|svg)$/i.test(url);
+
+  function handleOpenInNewTab() {
+    if (activeUrl) {
+      window.open(activeUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function handleDownload() {
+    if (!activeUrl) return;
+    const a = document.createElement("a");
+    a.href = activeUrl;
+    a.download = fileName || "Document";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  return (
+    <div className="media-player-container">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "12px",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontWeight: 600, fontSize: "1rem" }}>{fileName}</span>
+        <div style={{ display: "flex", gap: "10px" }}>
+          {activeUrl && (
+            <button
+              type="button"
+              onClick={handleOpenInNewTab}
+              className="button button-secondary"
+              style={{ padding: "6px 14px", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              Open in New Tab <ArrowUpRight size={14} />
+            </button>
+          )}
+          {activeUrl && (
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="button"
+              style={{ padding: "6px 14px", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              Download <Download size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {activeUrl && (isPdf || embedUrl.includes("drive.google.com")) ? (
+        <iframe
+          src={embedUrl}
+          title={title}
+          style={{ width: "100%", height: "560px", border: "0", borderRadius: "10px", backgroundColor: "#fff" }}
+        />
+      ) : activeUrl && isImage ? (
+        <div className="panel" style={{ padding: "20px", textAlign: "center", backgroundColor: "var(--surface-subtle, #f9fafb)" }}>
+          <img src={activeUrl} alt={title} style={{ maxWidth: "100%", maxHeight: "550px", borderRadius: "8px", objectFit: "contain" }} />
+        </div>
+      ) : (
+        <div className="panel" style={{ padding: "40px 24px", textAlign: "center" }}>
+          <FileText size={48} style={{ color: "var(--green, #10b981)", marginBottom: "16px" }} />
+          <h3 style={{ marginBottom: "8px" }}>{fileName}</h3>
+          <p className="muted" style={{ marginBottom: "24px" }}>
+            Click below to open or download the course document.
+          </p>
+          {activeUrl ? (
+            <div style={{ display: "inline-flex", gap: "12px" }}>
+              <button
+                type="button"
+                onClick={handleOpenInNewTab}
+                className="button"
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+              >
+                View Document <ArrowUpRight size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="button button-secondary"
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+              >
+                Download File <Download size={16} />
+              </button>
+            </div>
+          ) : (
+            <p className="muted">No document file available.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ResourceViewer({ lesson }: { lesson: Lesson }) {
@@ -57,60 +202,12 @@ export function ResourceViewer({ lesson }: { lesson: Lesson }) {
   }
 
   if (type === "document") {
-    const isPdf = url.toLowerCase().includes(".pdf") || url.startsWith("data:application/pdf");
-    const isImage = url.startsWith("data:image/") || /\.(png|jpe?g|webp|gif)$/i.test(url);
-    const fileName = lesson.fileName || "Course Document";
-
     return (
-      <div className="media-player-container">
-        {url && isPdf ? (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-              <span className="muted" style={{ fontWeight: 600 }}>{fileName}</span>
-              <a
-                href={url}
-                download={fileName}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-link"
-              >
-                Download PDF <ArrowUpRight size={14} />
-              </a>
-            </div>
-            <iframe
-              src={url}
-              title={lesson.title}
-              style={{ width: "100%", height: "540px", border: "0", borderRadius: "10px" }}
-            />
-          </div>
-        ) : url && isImage ? (
-          <div className="panel" style={{ padding: "20px", textAlign: "center" }}>
-            <img src={url} alt={lesson.title} style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "8px" }} />
-          </div>
-        ) : (
-          <div className="panel" style={{ padding: "32px", textAlign: "center" }}>
-            <FileText size={40} style={{ color: "var(--green)", marginBottom: "16px" }} />
-            <h3 style={{ marginBottom: "8px" }}>{fileName}</h3>
-            <p className="muted" style={{ marginBottom: "20px" }}>
-              View or download the course document below.
-            </p>
-            {url ? (
-              <a
-                href={url}
-                download={fileName}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="button"
-                style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
-              >
-                Open / Download Document <ArrowUpRight size={16} />
-              </a>
-            ) : (
-              <p className="muted">No document file available.</p>
-            )}
-          </div>
-        )}
-      </div>
+      <DocumentViewer
+        url={url}
+        title={lesson.title}
+        fileName={lesson.fileName || "Course Document"}
+      />
     );
   }
 
