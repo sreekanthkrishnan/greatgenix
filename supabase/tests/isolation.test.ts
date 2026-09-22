@@ -555,3 +555,127 @@ test("suspended organizations remain identifiable but grant no learning access",
   expect(data.orgs[0]).toMatchObject({ id: org, active: false });
   expect((await db.query("select * from public.courses")).rows).toEqual([]);
 });
+
+test.each(["video", "audio", "document", "link", "notes"])(
+  "%s lessons can be withdrawn and republished without processed media",
+  async (type) => {
+    await as(teacher);
+    const newId = id(90);
+    await act({
+      type: "lesson",
+      lesson: {
+        id: newId,
+        orgId: org,
+        courseId: course,
+        title: "Reference lesson",
+        duration: 10,
+        age: "13–15",
+        subject: "Math",
+        type,
+        url: type === "notes" ? "" : "https://example.com/lesson.pdf",
+        content: type === "notes" ? "Review equations" : "",
+        status: "published",
+      },
+    });
+    await act({
+      type: "lesson-status",
+      id: newId,
+      status: "draft",
+      reviewed: false,
+    });
+    await as(student);
+    expect(
+      (await db.query("select id from public.lessons where id=$1", [newId]))
+        .rows,
+    ).toHaveLength(0);
+    await as(teacher);
+    await act({
+      type: "lesson-status",
+      id: newId,
+      status: "review",
+      reviewed: false,
+    });
+    await db.exec("savepoint denied_action");
+    await expect(
+      act({
+        type: "lesson-status",
+        id: newId,
+        status: "published",
+        reviewed: false,
+      }),
+    ).rejects.toThrow(/review/);
+    await db.exec("rollback to savepoint denied_action");
+    await act({
+      type: "lesson-status",
+      id: newId,
+      status: "published",
+      reviewed: true,
+    });
+    await as(student);
+    expect(
+      (await db.query("select status from public.lessons where id=$1", [newId]))
+        .rows,
+    ).toEqual([{ status: "published" }]);
+  },
+);
+
+test("references persist with lesson visibility and only course editors can change them", async () => {
+  const reference = {
+    id: "ref-1",
+    type: "notes",
+    title: "Study notes",
+    content: "Remember to balance both sides.",
+  };
+  await as(teacher);
+  await act({ type: "lesson-reference", id: lesson, reference });
+  expect(
+    (
+      await db.query('select "references" from public.lessons where id=$1', [
+        lesson,
+      ])
+    ).rows[0].references,
+  ).toEqual([reference]);
+  await as(student);
+  await db.exec("savepoint denied_action");
+  await expect(
+    act({ type: "lesson-reference", id: lesson, reference }),
+  ).rejects.toThrow();
+  await db.exec("rollback to savepoint denied_action");
+  await db.exec("savepoint denied_action");
+  await expect(
+    act({
+      type: "remove-lesson-reference",
+      id: lesson,
+      referenceId: reference.id,
+    }),
+  ).rejects.toThrow();
+  await db.exec("rollback to savepoint denied_action");
+  await as(otherAdmin);
+  await db.exec("savepoint denied_action");
+  await expect(
+    act({ type: "lesson-reference", id: lesson, reference }, otherOrg),
+  ).rejects.toThrow();
+  await db.exec("rollback to savepoint denied_action");
+  await as(teacher);
+  await db.exec("savepoint denied_action");
+  await expect(
+    act({
+      type: "lesson-reference",
+      id: lesson,
+      reference: { ...reference, type: "link", url: "javascript:alert(1)" },
+    }),
+  ).rejects.toThrow();
+  await db.exec("rollback to savepoint denied_action");
+  await act({
+    type: "remove-lesson-reference",
+    id: lesson,
+    referenceId: reference.id,
+  });
+  expect(
+    (
+      await db.query('select "references" from public.lessons where id=$1', [
+        lesson,
+      ])
+    ).rows[0].references,
+  ).toEqual([]);
+});

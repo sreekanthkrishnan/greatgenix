@@ -5,6 +5,7 @@ import type {
   Course,
   Feature,
   Lesson,
+  LessonReference,
   Org,
   Session,
 } from "./index";
@@ -19,6 +20,8 @@ export type Action =
       status: Lesson["status"];
       reviewed: boolean;
     }
+  | { type: "lesson-reference"; id: string; reference: LessonReference }
+  | { type: "remove-lesson-reference"; id: string; referenceId: string }
   | { type: "complete"; id: string }
   | { type: "submit"; id: string; answer: string }
   | { type: "grade"; id: string; score: number; feedback: string }

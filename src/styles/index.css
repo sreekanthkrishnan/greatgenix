@@ -2894,3 +2894,139 @@ body {
 [data-theme="dark"] .org-symbol {
   color: #365840;
 }
+
+/* Lesson library and supporting resources */
+.material-thumbnail {
+  min-height: 158px;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #e7eddf;
+  color: #365840;
+  overflow: hidden;
+}
+.material-thumbnail > span {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.material-thumbnail > small {
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+.material-audio {
+  background: #eee7f4;
+  color: #69547f;
+}
+.material-document {
+  background: #e4edf4;
+  color: #3b627d;
+}
+.material-link {
+  background: #faecde;
+  color: #8c5d32;
+}
+.material-notes {
+  background: #f3efd9;
+  color: #7b6c31;
+}
+.recording-card {
+  overflow: hidden;
+  transition:
+    transform 0.16s,
+    box-shadow 0.16s;
+}
+.recording-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px #243a2412;
+}
+.lesson-references {
+  margin-top: 32px;
+}
+.reference-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.reference-heading h2 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+.reference-heading p {
+  font-size: 13px;
+  margin: 0;
+}
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+}
+.reference-card {
+  position: relative;
+  border: 1px solid var(--border, #e0e4db);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface, white);
+}
+.reference-open {
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  border: 0;
+  padding: 0 0 16px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.reference-open .material-thumbnail {
+  min-height: 110px;
+}
+.reference-open > strong,
+.reference-open > small {
+  display: block;
+  margin: 12px 14px 0;
+  overflow-wrap: anywhere;
+}
+.reference-open > small {
+  margin-top: 6px;
+  opacity: 0.65;
+}
+.reference-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: 0;
+  border-radius: 7px;
+  padding: 7px;
+  background: white;
+  color: #80544d;
+  cursor: pointer;
+}
+.reference-empty {
+  border: 1px dashed var(--border, #d7ddce);
+  border-radius: 12px;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+@media (max-width: 600px) {
+  .reference-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .list-toolbar {
+    flex-wrap: wrap;
+  }
+  .list-toolbar .search-field {
+    width: 100%;
+  }
+}

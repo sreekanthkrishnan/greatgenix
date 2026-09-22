@@ -45,6 +45,14 @@ export type Member = {
   email: string;
 };
 export type LessonType = "video" | "audio" | "document" | "link" | "notes";
+export type LessonReference = {
+  id: string;
+  type: "notes" | "link" | "document";
+  title: string;
+  content?: string;
+  url?: string;
+  fileName?: string;
+};
 export type Lesson = {
   id: string;
   orgId: string;
@@ -53,6 +61,7 @@ export type Lesson = {
   duration: number;
   status: "draft" | "review" | "published";
   mediaStatus?: string;
+  references?: LessonReference[];
   age: string;
   subject: string;
   type?: LessonType;
@@ -106,7 +115,10 @@ export type WorkspaceState = {
   reports: { orgId: string; lessonId: string; reason: string }[];
 };
 export type Viewer = {
-  name?: string; orgId: string; role: Role; userId: string 
+  name?: string;
+  orgId: string;
+  role: Role;
+  userId: string;
 };
 export const isTeacher = (role: Role) =>
   role === "teacher" || role === "teacher-admin";

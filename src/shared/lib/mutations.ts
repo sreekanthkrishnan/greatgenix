@@ -20,6 +20,8 @@ export function mutate(orgId: string, action: Action) {
       return save1(orgId, action);
     case "lesson":
     case "lesson-status":
+    case "lesson-reference":
+    case "remove-lesson-reference":
     case "complete":
       return save2(orgId, action);
     case "assignment":

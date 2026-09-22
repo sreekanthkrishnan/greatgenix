@@ -36,6 +36,7 @@ async function fixture(page: Page, role = "teacher-admin") {
   };
   const courses: Record<string, unknown>[] = [];
   const sessions: Record<string, unknown>[] = [];
+  const lessons: Record<string, any>[] = [];
   const assignments: Record<string, unknown>[] = [];
   let failNext = false;
   await page.route("https://test.supabase.co/**", async (route) => {
@@ -82,6 +83,16 @@ async function fixture(page: Page, role = "teacher-admin") {
         if (a.type === "course") courses.push(a.course);
         if (a.type === "session") sessions.push(a.session);
         if (a.type === "assignment") assignments.push(a.assignment);
+        if (a.type === "lesson")
+          lessons.push({ ...a.lesson, mediaStatus: "pending", references: [] });
+        const lesson = lessons.find((l) => l.id === a.id);
+        if (a.type === "lesson-status" && lesson) lesson.status = a.status;
+        if (a.type === "lesson-reference" && lesson)
+          lesson.references.push(a.reference);
+        if (a.type === "remove-lesson-reference" && lesson)
+          lesson.references = lesson.references.filter(
+            (r: { id: string }) => r.id !== a.referenceId,
+          );
         return route.fulfill({ json: null });
       }
       if (name === "organization_brand")
@@ -93,24 +104,26 @@ async function fixture(page: Page, role = "teacher-admin") {
     }
     const table = url.pathname.split("/").pop();
     const data =
-      table === "memberships"
-        ? [
-            {
-              orgId,
-              userId: uid,
-              name: "Maya Rao",
-              email: "admin@example.com",
-              role,
-              active: true,
-            },
-          ]
-        : table === "courses"
-          ? courses
-          : table === "sessions"
-            ? sessions
-            : table === "assignments"
-              ? assignments
-              : [];
+      table === "lessons"
+        ? lessons
+        : table === "memberships"
+          ? [
+              {
+                orgId,
+                userId: uid,
+                name: "Maya Rao",
+                email: "admin@example.com",
+                role,
+                active: true,
+              },
+            ]
+          : table === "courses"
+            ? courses
+            : table === "sessions"
+              ? sessions
+              : table === "assignments"
+                ? assignments
+                : [];
     return route.fulfill({ json: data });
   });
   return {
@@ -176,9 +189,11 @@ test("sign in, create persistent course and assessment, and save organization br
     .selectOption("dark");
   await page.getByLabel("Tagline").fill("Every mind belongs.");
   await page.getByRole("button", { name: "Save appearance" }).click();
-  await expect(page.getByRole("status").filter({hasText:"Organization appearance saved"})).toContainText(
-    "Organization appearance saved",
-  );
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Organization appearance saved" }),
+  ).toContainText("Organization appearance saved");
   await page.reload();
   await expect(page.getByLabel("Primary color")).toHaveValue("#673a87");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -244,4 +259,95 @@ test("mobile navigation opens without horizontal overflow", async ({
     fullPage: true,
     animations: "disabled",
   });
+});
+
+test("lesson republishing and typed references survive reload", async ({
+  page,
+}) => {
+  await fixture(page);
+  await signIn(page);
+  await page.getByRole("link", { name: "My classroom", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Create course", exact: true })
+    .click();
+  await page.getByLabel("Title / name").fill("Algebra course");
+  await page.getByLabel("Subject", { exact: true }).fill("Math");
+  await page.getByLabel("Grade", { exact: true }).fill("Grade 9");
+  await page.getByLabel("Batch", { exact: true }).fill("A");
+  await page.getByLabel("Introduction").fill("Equations");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.goto("/#/recordings");
+  await page.getByRole("button", { name: "Add a lesson" }).click();
+  await page.getByLabel("Title / name").fill("Linear equations");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Material type")
+    .selectOption("notes");
+  await page
+    .getByLabel("Lesson Notes & Content")
+    .fill("Start by balancing both sides.");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("button", { name: "Move to draft" }).click();
+  await page.getByRole("button", { name: "Send to review" }).click();
+  await expect(
+    page.getByRole("button", { name: "Publish lesson" }),
+  ).toBeDisabled();
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Publish lesson" }).click();
+  await expect(page.getByText("Visible to enrolled learners")).toBeVisible();
+  await page.getByRole("button", { name: "Add reference" }).click();
+  await page.getByLabel("Reference title").fill("Revision notes");
+  await page.getByLabel("Reference notes").fill("Practice every day.");
+  await page.getByRole("button", { name: "Save reference" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Add reference" }).click();
+  await page.getByLabel("Reference type").selectOption("link");
+  await page.getByLabel("Reference title").fill("Practice website");
+  await page.getByLabel("Reference URL").fill("https://example.com/practice");
+  await page.getByRole("button", { name: "Save reference" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Add reference" }).click();
+  await page.getByLabel("Reference type").selectOption("document");
+  await page.getByLabel("Reference title").fill("Worksheet");
+  await page
+    .getByLabel("Upload reference document")
+    .setInputFiles({
+      name: "worksheet.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("Solve x + 2 = 4"),
+    });
+  await page.getByRole("button", { name: "Save reference" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(".reference-card")).toHaveCount(3);
+  await page.getByRole("button", { name: "Revision notes Notes" }).click();
+  await expect(page.getByText("Practice every day.")).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await page.screenshot({
+    path: "artifacts/lesson-detail.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Remove Practice website" }).click();
+  await expect(page.locator(".reference-card")).toHaveCount(2);
+  await page.goto("/#/recordings");
+  await page.getByLabel("Filter material type").selectOption("video");
+  await expect(
+    page.getByRole("heading", { name: "No lessons found" }),
+  ).toBeVisible();
+  await page.getByLabel("Filter material type").selectOption("notes");
+  await expect(
+    page.getByRole("heading", { name: "Linear equations" }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "artifacts/lesson-library.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".recording-card")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

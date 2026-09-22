@@ -3,40 +3,39 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
-  ExternalLink,
-  FileText,
-  Play,
   Plus,
   Search,
   ShieldCheck,
-  Volume2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
 import {
   Badge,
   Button,
   CheckLabel,
-  CourseArt,
   Empty,
-  Notice,
   PageHeading,
-  SectionHeading,
   Unavailable,
 } from "../../../shared/components";
 import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
 import { available } from "../../../shared/types";
 import { ResourceViewer } from "./ResourceViewer";
+import { LessonReferences, MaterialThumbnail } from "./LessonReferences";
 
 export function Recordings({ id }: { id?: string }) {
-  const { state, viewer, act } = useWorkspace();
+  const { state, viewer, act, busy } = useWorkspace();
   const { lessons, teacher } = useScope();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [material, setMaterial] = useState("all");
   const [form, setForm] = useState(false);
   const [report, setReport] = useState(false);
   const [reviewed, setReviewed] = useState(false);
+  useEffect(() => {
+    setReviewed(false);
+    setReport(false);
+  }, [id]);
   if (!available(state, viewer, "recordings")) return <Unavailable />;
   const lesson = id ? lessons.find((l) => l.id === id) : undefined;
   if (id && !lesson)
@@ -61,27 +60,21 @@ export function Recordings({ id }: { id?: string }) {
         <div className="lesson-layout">
           <section>
             <ResourceViewer lesson={lesson} />
-            <div className="lesson-description" style={{ marginTop: "24px" }}>
-              <SectionHeading title="A closer look" />
-              <p>{course.description}</p>
-              <Notice>
-                Teacher-approved lessons and materials are available to enrolled learners.
-              </Notice>
-            </div>
+            <LessonReferences
+              key={lesson.id}
+              lesson={lesson}
+              editable={teacher}
+            />
           </section>
           <aside className="panel lesson-sidebar">
             <Badge tone={lesson.status === "published" ? "sage" : "peach"}>
               {lesson.status === "review" ? "In review" : lesson.status}
             </Badge>
-            <h3>
-              {teacher
-                ? "A thoughtful review matters."
-                : "Make this lesson your own."}
-            </h3>
+            <h3>{teacher ? "Lesson publishing" : "Your progress"}</h3>
             <p>
               {teacher
-                ? "Check curriculum relevance, intended age and subject before making content available to learners."
-                : "Take your time. Revisit the ideas, then mark your progress."}
+                ? "Review this lesson before sharing it with learners."
+                : "Mark this lesson complete when you’re ready."}
             </p>
             <div className="detail-row">
               <ShieldCheck size={17} />
@@ -98,7 +91,12 @@ export function Recordings({ id }: { id?: string }) {
               <>
                 {lesson.status === "draft" && (
                   <Button
-                    disabled={lesson.mediaStatus !== "ready"}
+                    disabled={
+                      busy ||
+                      !(lesson.type === "notes"
+                        ? lesson.content?.trim()
+                        : lesson.url?.trim() || lesson.mediaStatus === "ready")
+                    }
                     onClick={() =>
                       act(
                         {
@@ -127,7 +125,7 @@ export function Recordings({ id }: { id?: string }) {
                       curriculum suitability.
                     </label>
                     <Button
-                      disabled={!reviewed}
+                      disabled={!reviewed || busy}
                       onClick={() =>
                         act(
                           {
@@ -149,6 +147,7 @@ export function Recordings({ id }: { id?: string }) {
                   <>
                     <CheckLabel>Visible to enrolled learners</CheckLabel>
                     <Button
+                      disabled={busy}
                       variant="secondary"
                       onClick={() => {
                         setReviewed(false);
@@ -159,11 +158,11 @@ export function Recordings({ id }: { id?: string }) {
                             status: "draft",
                             reviewed: false,
                           },
-                          "Lesson withdrawn.",
+                          "Lesson moved to draft.",
                         );
                       }}
                     >
-                      Withdraw to draft
+                      Move to draft
                     </Button>
                   </>
                 )}
@@ -200,17 +199,18 @@ export function Recordings({ id }: { id?: string }) {
       `${l.title} ${l.subject} ${l.age}`
         .toLowerCase()
         .includes(search.toLowerCase()) &&
-      (filter === "all" || l.status === filter),
+      (filter === "all" || l.status === filter) &&
+      (material === "all" || (l.type || "video") === material),
   );
   return (
     <>
       <PageHeading
-        eyebrow="IDEAS WORTH COMING BACK TO"
+        eyebrow="LEARNING RESOURCES"
         title="Lesson library"
         description={
           teacher
-            ? "Create, review and share something worth learning."
-            : "Teacher-approved lessons. Your own pace."
+            ? "Manage lessons and supporting materials for your courses."
+            : "Explore your lessons and supporting materials."
         }
         action={
           teacher && (
@@ -225,12 +225,24 @@ export function Recordings({ id }: { id?: string }) {
         <label className="search-field">
           <Search size={17} />
           <input
-            aria-label="Search approved library"
+            aria-label="Search lessons"
             placeholder="Search lessons, subjects or ages…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
+        <select
+          aria-label="Filter material type"
+          value={material}
+          onChange={(e) => setMaterial(e.target.value)}
+        >
+          <option value="all">All types</option>
+          <option value="video">Video</option>
+          <option value="audio">Audio</option>
+          <option value="document">Documents</option>
+          <option value="link">Links</option>
+          <option value="notes">Notes</option>
+        </select>
         {teacher ? (
           <select
             aria-label="Filter lesson status"
@@ -243,38 +255,24 @@ export function Recordings({ id }: { id?: string }) {
             <option value="published">Published</option>
           </select>
         ) : (
-          <CheckLabel>Curated educational library</CheckLabel>
+          <span className="muted">{filtered.length} lessons</span>
         )}
       </div>
       <div className="recording-grid">
         {filtered.map((l) => {
           const course = state.courses.find((c) => c.id === l.courseId)!;
           const ltype = l.type || "video";
-          const TypeIcon =
-            ltype === "audio"
-              ? Volume2
-              : ltype === "document"
-                ? FileText
-                : ltype === "link"
-                  ? ExternalLink
-                  : ltype === "notes"
-                    ? FileText
-                    : Play;
           return (
             <a
               className="recording-card"
               href={`#/recordings/${l.id}`}
               key={l.id}
             >
-              <div className="recording-art">
-                <CourseArt color={course.color} />
-                <span className="mini-play">
-                  <TypeIcon size={17} />
-                </span>
-                <span className="duration">
-                  {ltype.toUpperCase()} · {l.duration} min
-                </span>
-              </div>
+              <MaterialThumbnail
+                type={ltype}
+                fileName={l.fileName}
+                title={ltype === "notes" ? l.content?.slice(0, 100) : undefined}
+              />
               <div className="course-card-body">
                 <div className="course-meta">
                   <span>{l.subject}</span>
@@ -284,8 +282,13 @@ export function Recordings({ id }: { id?: string }) {
                 </div>
                 <h3>{l.title}</h3>
                 <p>
-                  {course.grade} · {l.age}
+                  {course.title} · {l.duration} min
                 </p>
+                {!!l.references?.length && (
+                  <small className="muted">
+                    {l.references.length} references
+                  </small>
+                )}
               </div>
             </a>
           );
@@ -294,7 +297,7 @@ export function Recordings({ id }: { id?: string }) {
       {!filtered.length && (
         <Empty
           title="No lessons found"
-          text="Try a different search or stage. Only this organization’s available educational catalog is searched."
+          text="Try a different search, material type or status."
         />
       )}
       {form && <ActionForm kind="recording" close={() => setForm(false)} />}

@@ -46,7 +46,7 @@ export function ActionForm({
   const titles = {
     course: "Make room for curiosity",
     session: "Plan your next class",
-    recording: "A new lesson, ready to grow",
+    recording: "Add a lesson",
     organization: "Create an organization",
     report: "Report this lesson",
     assignment: "A new chance to grow",
@@ -338,9 +338,7 @@ export function ActionForm({
                 defaultValue={20}
               />
             </Field>
-            <Notice>
-              Lessons support YouTube/Vimeo video links, audio links, uploaded document files/URLs, external links, and text notes.
-            </Notice>
+
           </>
         )}
         {kind === "assignment" && (
