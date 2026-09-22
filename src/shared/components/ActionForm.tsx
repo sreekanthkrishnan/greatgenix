@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useWorkspace } from "../../app/providers/OrgContextProvider";
-import { canSeeCourse, localDate } from "../types";
+import { canSeeCourse, localDate, type LessonType } from "../types";
 import { Button, Field, Modal, Notice } from "./index";
 import { InviteForm } from "../../features/memberships/components/Members";
 import { createOrganization } from "../../features/organizations/api";
@@ -26,6 +26,7 @@ export function ActionForm({
   const { state, viewer, act, busy, refresh } = useWorkspace();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [lessonType, setLessonType] = useState<LessonType>("video");
   const courses = state.courses.filter((c) => canSeeCourse(c, viewer));
   if (kind === "member")
     return <InviteForm close={close} courseId={courseId} />;
@@ -90,22 +91,30 @@ export function ActionForm({
           }
           break;
         case "recording":
-          ok = await act({
-            type: "lesson",
-            lesson: {
-              id,
-              orgId: viewer.orgId,
-              courseId: value("course"),
-              title: value("title"),
-              duration: Number(value("duration")),
-              subject:
-                courses.find((c) => c.id === value("course"))?.subject || "",
-              age: value("age"),
-              status: "draft",
-              completeBy: [],
-            },
-          });
-          if (ok) location.hash = `#/recordings/${id}`;
+          {
+            const type = (value("type") as LessonType) || "video";
+            const url = value("url");
+            const content = value("content");
+            ok = await act({
+              type: "lesson",
+              lesson: {
+                id,
+                orgId: viewer.orgId,
+                courseId: value("course"),
+                title: value("title"),
+                duration: Number(value("duration")),
+                subject:
+                  courses.find((c) => c.id === value("course"))?.subject || "",
+                age: value("age"),
+                status: "published",
+                type,
+                url,
+                content,
+                completeBy: [],
+              },
+            });
+            if (ok) location.hash = `#/recordings/${id}`;
+          }
           break;
         case "assignment":
           ok = await act({
@@ -236,6 +245,46 @@ export function ActionForm({
         )}
         {kind === "recording" && (
           <>
+            <Field label="Material type">
+              <select
+                name="type"
+                value={lessonType}
+                onChange={(e) => setLessonType(e.target.value as LessonType)}
+              >
+                <option value="video">Video (YouTube, Vimeo, MP4 URL)</option>
+                <option value="audio">Audio (MP3, SoundCloud, Podcast URL)</option>
+                <option value="document">Document (PDF / Document URL)</option>
+                <option value="link">Link (External web resource)</option>
+                <option value="notes">Notes (Text / Markdown content)</option>
+              </select>
+            </Field>
+            {lessonType !== "notes" ? (
+              <Field label={`${lessonType.charAt(0).toUpperCase() + lessonType.slice(1)} URL`}>
+                <input
+                  name="url"
+                  type="url"
+                  required
+                  placeholder={
+                    lessonType === "video"
+                      ? "https://www.youtube.com/watch?v=... or https://vimeo.com/..."
+                      : lessonType === "audio"
+                        ? "https://example.com/audio.mp3"
+                        : lessonType === "document"
+                          ? "https://example.com/document.pdf"
+                          : "https://example.com/resource"
+                  }
+                />
+              </Field>
+            ) : (
+              <Field label="Lesson Notes & Content">
+                <textarea
+                  name="content"
+                  required
+                  rows={5}
+                  placeholder="Enter the lesson notes, guide, or reading material here..."
+                />
+              </Field>
+            )}
             <Field label="Intended age">
               <select name="age">
                 <option>13–15 years</option>
@@ -254,8 +303,7 @@ export function ActionForm({
               />
             </Field>
             <Notice>
-              Save a draft, upload its video, then review and publish the
-              lesson.
+              Lessons support YouTube videos, audio streams, documents, links, and text notes. No video file upload is required.
             </Notice>
           </>
         )}

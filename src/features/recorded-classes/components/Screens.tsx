@@ -3,10 +3,13 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
+  ExternalLink,
+  FileText,
   Play,
+  Plus,
   Search,
   ShieldCheck,
-  Upload,
+  Volume2,
 } from "lucide-react";
 import { useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
@@ -24,7 +27,7 @@ import {
 import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
 import { available } from "../../../shared/types";
-import { VideoPlayer, VideoUpload } from "./VideoPlayer";
+import { ResourceViewer } from "./ResourceViewer";
 
 export function Recordings({ id }: { id?: string }) {
   const { state, viewer, act } = useWorkspace();
@@ -57,16 +60,12 @@ export function Recordings({ id }: { id?: string }) {
         />
         <div className="lesson-layout">
           <section>
-            <VideoPlayer lessonId={lesson.id} />
-            {teacher && lesson.status === "draft" && (
-              <VideoUpload lessonId={lesson.id} status={lesson.mediaStatus} />
-            )}
-            <div className="lesson-description">
+            <ResourceViewer lesson={lesson} />
+            <div className="lesson-description" style={{ marginTop: "24px" }}>
               <SectionHeading title="A closer look" />
               <p>{course.description}</p>
               <Notice>
-                Only reviewed, published lessons are visible to enrolled
-                learners.
+                Teacher-approved lessons and materials are available to enrolled learners.
               </Notice>
             </div>
           </section>
@@ -216,8 +215,8 @@ export function Recordings({ id }: { id?: string }) {
         action={
           teacher && (
             <Button onClick={() => setForm(true)}>
-              <Upload size={17} />
-              Add a recording
+              <Plus size={17} />
+              Add a lesson
             </Button>
           )
         }
@@ -250,6 +249,17 @@ export function Recordings({ id }: { id?: string }) {
       <div className="recording-grid">
         {filtered.map((l) => {
           const course = state.courses.find((c) => c.id === l.courseId)!;
+          const ltype = l.type || "video";
+          const TypeIcon =
+            ltype === "audio"
+              ? Volume2
+              : ltype === "document"
+                ? FileText
+                : ltype === "link"
+                  ? ExternalLink
+                  : ltype === "notes"
+                    ? FileText
+                    : Play;
           return (
             <a
               className="recording-card"
@@ -259,9 +269,11 @@ export function Recordings({ id }: { id?: string }) {
               <div className="recording-art">
                 <CourseArt color={course.color} />
                 <span className="mini-play">
-                  <Play size={17} />
+                  <TypeIcon size={17} />
                 </span>
-                <span className="duration">{l.duration} min</span>
+                <span className="duration">
+                  {ltype.toUpperCase()} · {l.duration} min
+                </span>
               </div>
               <div className="course-card-body">
                 <div className="course-meta">

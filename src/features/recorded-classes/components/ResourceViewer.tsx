@@ -1,4 +1,4 @@
-import { ArrowUpRight, ExternalLink, FileText, Music, Play, Volume2 } from "lucide-react";
+import { ArrowUpRight, ExternalLink, FileText, Play, Volume2 } from "lucide-react";
 import type { Lesson } from "../../../shared/types";
 
 function getYouTubeEmbedUrl(url: string): string | null {
