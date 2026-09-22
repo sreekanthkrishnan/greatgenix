@@ -28,9 +28,9 @@ export function Organizations() {
       <PageHeading
         section="organizations"
         summary={[{ value: state.orgs.length, label: "organizations" }, { value: state.orgs.filter(o => o.active).length, label: "active" }]}
-        eyebrow="PLATFORM WORKSPACE"
-        title="Room for every organization"
-        description="Independent learning spaces. Thoughtful controls."
+        eyebrow="YOUR PLATFORM SPACE"
+        title="Organizations"
+        description="Manage organizations, platform access and available features."
         action={
           <Button onClick={() => setForm(true)}>
             <Plus size={17} />

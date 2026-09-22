@@ -50,8 +50,10 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     location.hash.startsWith("#/organizations"),
   );
   useEffect(() => {
-    const update = () =>
-      setPlatformRoute(location.hash.startsWith("#/organizations"));
+    const update = () => {
+      if (!location.hash.startsWith("#/profile"))
+        setPlatformRoute(location.hash.startsWith("#/organizations"));
+    };
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, []);

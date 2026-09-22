@@ -1,3 +1,4 @@
+import { roleContent } from "../../../shared/utils/roleContent";
 import {
   ArrowRight,
   BookOpen,
@@ -222,13 +223,9 @@ export function Recordings({ id }: { id?: string }) {
   return (
     <>
       <PageHeading
-        eyebrow="YOUR LEARNING COLLECTION"
+        eyebrow={roleContent[viewer.role].libraryEyebrow.toUpperCase()}
         title="Lesson library"
-        description={
-          teacher
-            ? "Bring your lessons and supporting resources together."
-            : "Pick up where you left off. Learn at your own pace."
-        }
+        description={roleContent[viewer.role].libraryDescription}
         artwork={<LessonArtwork type="notes" />}
         summaryLabel="Library summary"
         summary={[

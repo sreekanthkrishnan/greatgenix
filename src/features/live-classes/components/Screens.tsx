@@ -1,3 +1,4 @@
+import { roleContent } from "../../../shared/utils/roleContent";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -87,7 +88,7 @@ export function Sessions({ id }: { id?: string }) {
         </a>
         <PageHeading
           section="schedule"
-          eyebrow="LEARN TOGETHER"
+          eyebrow={teacher ? "YOUR TEACHING SESSION" : "YOUR LIVE CLASS"}
           title={session.title}
           description={`${course?.subject || "Subject"} · ${course?.grade || "Grade"} · ${course?.batch || "Batch"}`}
         />
@@ -95,7 +96,7 @@ export function Sessions({ id }: { id?: string }) {
           <div className="live-room-art">
             <Video size={48} />
             <h2>{`Interactive ${platform.name} Classroom`}</h2>
-            <p>{`Attend live interactive sessions directly via ${platform.name}.`}</p>
+            <p>{`Join live interactive sessions directly via ${platform.name}.`}</p>
             <Badge tone="light">{platform.badge}</Badge>
           </div>
           <div className="live-room-details">
@@ -172,9 +173,9 @@ export function Sessions({ id }: { id?: string }) {
       <PageHeading
         section="schedule"
         summary={[{ value: sessions.length, label: "class sessions" }, { value: new Set(sessions.map(s => s.courseId)).size, label: "courses" }]}
-        eyebrow="MAKE TIME FOR DISCOVERY"
+        eyebrow={roleContent[viewer.role].scheduleEyebrow.toUpperCase()}
         title="Class schedule"
-        description="A little structure. A lot to look forward to."
+        description={roleContent[viewer.role].scheduleDescription}
         action={
           teacher && (
             <Button onClick={() => setForm(true)}>
@@ -231,7 +232,7 @@ export function Sessions({ id }: { id?: string }) {
       {!sessions.length && (
         <Empty
           title="Your calendar has room to grow"
-          text="Schedule a class to get started."
+          text={teacher ? "Schedule a class to get started." : "Your scheduled classes will appear here when your teacher adds them."}
         />
       )}
       {form && <ActionForm kind="session" close={() => setForm(false)} />}

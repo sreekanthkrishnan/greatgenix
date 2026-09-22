@@ -1,3 +1,6 @@
+import { useAuth } from "../../../app/providers/AuthProvider";
+import { profileText } from "../../../shared/utils/roleContent";
+import { roleContent } from "../../../shared/utils/roleContent";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -42,10 +45,15 @@ import { CourseRoster } from "./CourseRoster";
 export function Dashboard() {
   const { state, viewer } = useWorkspace();
   const { courses, sessions, lessons, teacher } = useScope();
+  const { session: authSession } = useAuth();
   const [form, setForm] = useState<FormKind | null>(null);
-  const name =
-    state.members.find((m) => m.id === viewer.userId)?.name.split(" ")[0] ||
-    "there";
+  const name = (
+    profileText(authSession?.user.user_metadata.name) ||
+    state.members.find((m) => m.id === viewer.userId)?.name ||
+    "there"
+  )
+    .trim()
+    .split(/\s+/)[0];
   const next = available(state, viewer, "live")
     ? sessions.find(
         (s) =>
@@ -126,14 +134,10 @@ export function Dashboard() {
   return (
     <>
       <PageHeading
-        eyebrow="YOUR LEARNING SPACE"
+        eyebrow={roleContent[viewer.role].workspace.toUpperCase()}
         section="overview"
         title={`Good to see you, ${name}.`}
-        description={
-          teacher
-            ? "Small moments of teaching. A world of possibility."
-            : "Stay curious. Your next discovery is just around the corner."
-        }
+        description={roleContent[viewer.role].overviewDescription}
         action={
           teacher && available(state, viewer, "live") ? (
             <Button onClick={() => setForm("session")}>
@@ -142,7 +146,8 @@ export function Dashboard() {
             </Button>
           ) : (
             <a className="button primary" href="#/courses">
-              Explore my courses <ArrowUpRight size={17} />
+              {teacher ? "View my courses" : "Explore my courses"}{" "}
+              <ArrowUpRight size={17} />
             </a>
           )
         }
@@ -162,7 +167,9 @@ export function Dashboard() {
             <p>
               {next
                 ? `${course?.subject} · ${course?.grade} · ${course?.batch}`
-                : "Explore your courses and keep learning, one thoughtful step at a time."}
+                : teacher
+                  ? "Prepare your courses and share resources for your next lesson."
+                  : "Explore your courses and keep learning, one thoughtful step at a time."}
             </p>
             {next && (
               <div className="hero-time">
@@ -284,7 +291,7 @@ export function Dashboard() {
       {!courses.length && (
         <Empty
           title="Your first course belongs here"
-          text="An admin-assigned teacher can create a course and add a learner."
+          text={roleContent[viewer.role].emptyCourses}
         />
       )}
       <div className="dashboard-bottom">
@@ -346,10 +353,13 @@ export function Courses() {
     <>
       <PageHeading
         section="courses"
-        summary={[{ value: courses.length, label: "courses" }, { value: lessons.length, label: "lessons" }]}
-        eyebrow="ROOM TO GROW"
+        summary={[
+          { value: courses.length, label: "courses" },
+          { value: lessons.length, label: "lessons" },
+        ]}
+        eyebrow={roleContent[viewer.role].coursesEyebrow.toUpperCase()}
         title={teacher ? "Your courses" : "My courses"}
-        description="A few familiar subjects. Endless new possibilities."
+        description={roleContent[viewer.role].coursesDescription}
         action={
           canAdmin(viewer.role) && (
             <Button onClick={() => setForm(true)}>
@@ -390,7 +400,7 @@ export function Courses() {
           text={
             search
               ? "Try another subject or course name."
-              : "Courses appear here once an admin-assigned teacher sets them up."
+              : roleContent[viewer.role].emptyCourses
           }
         />
       )}{" "}
@@ -438,8 +448,22 @@ export function CourseDetail({ id }: { id: string }) {
         eyebrow={`${course.subject} / ${course.grade} / ${course.batch}`}
         title={course.title}
         description={course.description}
-        summary={[{ value: course.studentIds.length, label: "learners" }, { value: list.length, label: "lessons" }]}
-        action={canDelete && <Button variant="secondary" onClick={() => setConfirmDelete(true)} disabled={busy}><Trash2 size={16} />Delete course</Button>}
+        summary={[
+          { value: course.studentIds.length, label: "learners" },
+          { value: list.length, label: "lessons" },
+        ]}
+        action={
+          canDelete && (
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmDelete(true)}
+              disabled={busy}
+            >
+              <Trash2 size={16} />
+              Delete course
+            </Button>
+          )
+        }
       />
       <div className="tabs" role="tablist" aria-label="Course views">
         {["lessons", "schedule", ...(teacher ? ["roster"] : [])].map((t) => (
@@ -589,8 +613,16 @@ export function CourseDetail({ id }: { id: string }) {
       )}
       {confirmDelete && (
         <Modal title="Delete Course?" close={() => setConfirmDelete(false)}>
-          <p style={{ marginBottom: "1.25rem", color: "var(--text-color, currentColor)" }}>
-            Are you sure you want to delete <strong>{course.title}</strong>? This action cannot be undone and will permanently remove this course along with all associated lessons, class schedules, assignments, and enrollment records.
+          <p
+            style={{
+              marginBottom: "1.25rem",
+              color: "var(--text-color, currentColor)",
+            }}
+          >
+            Are you sure you want to delete <strong>{course.title}</strong>?
+            This action cannot be undone and will permanently remove this course
+            along with all associated lessons, class schedules, assignments, and
+            enrollment records.
           </p>
           <div className="form-actions">
             <Button variant="secondary" onClick={() => setConfirmDelete(false)}>

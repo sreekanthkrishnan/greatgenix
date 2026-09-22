@@ -1,3 +1,9 @@
+import { useAuth } from "../providers/AuthProvider";
+import {
+  roleContent,
+  initialsFor,
+  profileText,
+} from "../../shared/utils/roleContent";
 import { useEffect, useState } from "react";
 import {
   BookOpen,
@@ -8,6 +14,7 @@ import {
   Menu,
   Settings2,
   Sprout,
+  UserRound,
   Users,
   Video,
   X,
@@ -20,11 +27,18 @@ import { signOut } from "../../features/auth/api";
 export function WorkspaceLayout() {
   const { state, viewer, setOrg, toast, notify, busy, isPlatform } =
     useWorkspace();
+  const { session } = useAuth();
+  const copy = roleContent[viewer.role];
   const route = useRoute();
   const [menu, setMenu] = useState(false);
   const org = state.orgs.find((o) => o.id === viewer.orgId)!;
   const branding = org.branding || defaultBranding;
   const member = state.members.find((m) => m.id === viewer.userId);
+  const displayName =
+    profileText(session?.user.user_metadata.name) ||
+    member?.name ||
+    "My profile";
+  const initials = initialsFor(displayName);
   const platform = viewer.role === "super-admin";
   useEffect(() => {
     applyBranding(branding);
@@ -74,10 +88,14 @@ export function WorkspaceLayout() {
           ? [{ id: "settings", label: "Organization", icon: Settings2 }]
           : []),
       ];
+  nav.push({ id: "profile", label: "My profile", icon: UserRound });
   return (
     <div className="app production-app">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <a className="brand" href="#/dashboard">
+        <a
+          className="brand"
+          href={platform ? "#/organizations" : "#/dashboard"}
+        >
           {branding.logoUrl ? (
             <img
               className="brand-image"
@@ -101,27 +119,8 @@ export function WorkspaceLayout() {
         >
           <X size={20} />
         </button>
-        <div className="workspace-picker">
-          <span className="workspace-logo">{org.name[0]}</span>
-          <div>
-            <small>YOUR ORGANIZATION</small>
-            <select
-              aria-label="Organization"
-              value={viewer.orgId}
-              onChange={(e) => {
-                setOrg(e.target.value);
-                location.hash = "#/dashboard";
-              }}
-            >
-              {state.orgs.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <span className="nav-caption">YOUR WORKSPACE</span>
+        <div className="workspace-picker"></div>
+        {/* <span className="nav-caption">{copy.workspace.toUpperCase()}</span> */}
         <nav aria-label="Main navigation">
           {nav.map((n) => (
             <a
@@ -141,11 +140,17 @@ export function WorkspaceLayout() {
             <p>{branding.tagline}</p>
           </div>
           <div className="profile">
-            <Avatar initials={member?.initials || "A"} />
-            <div>
-              <strong>{member?.name || "Platform administrator"}</strong>
-              <small>{viewer.role.replace("-", " + ")}</small>
-            </div>
+            <a
+              className="profile-link"
+              href="#/profile"
+              aria-label="Open my profile"
+            >
+              <Avatar initials={initials} />
+              <div>
+                <strong>{displayName}</strong>
+                <small>{copy.label}</small>
+              </div>
+            </a>
             <button
               className="icon-button"
               aria-label="Sign out"
@@ -188,12 +193,18 @@ export function WorkspaceLayout() {
                 day: "numeric",
               })}
             </span>
-            <Avatar initials={member?.initials || "A"} small />
+            <a
+              href="#/profile"
+              className="topbar-profile"
+              aria-label="Edit my profile"
+            >
+              <Avatar initials={initials} small />
+            </a>
           </div>
         </header>
         <main className="main" key={`${viewer.orgId}-${viewer.role}-${route}`}>
           <>
-            {!org.active && !platform ? (
+            {!org.active && !platform && route.split("/")[0] !== "profile" ? (
               <Unavailable
                 title="This organization is suspended"
                 text="Contact the platform administrator to restore access. Existing records are preserved."

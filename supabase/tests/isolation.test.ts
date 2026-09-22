@@ -679,3 +679,57 @@ test("references persist with lesson visibility and only course editors can chan
     ).rows[0].references,
   ).toEqual([]);
 });
+
+test("profile name changes sync memberships without changing access or other members", async () => {
+  await db.exec("reset role");
+  await db.query(
+    `insert into public.memberships("orgId","userId",name,email,role) values($1,$2,'Student','student@example.com','student')`,
+    [otherOrg, student],
+  );
+  // Auth updates metadata for the authenticated account, then this trigger runs.
+  await db.query(`update auth.users set raw_user_meta_data=$1 where id=$2`, [
+    JSON.stringify({
+      name: "New learner name",
+      headline: "Learning algebra",
+      role: "super-admin",
+    }),
+    student,
+  ]);
+  const memberships = await db.query(
+    'select name,role from public.memberships where "userId"=$1',
+    [student],
+  );
+  expect(memberships.rows).toEqual([
+    { name: "New learner name", role: "student" },
+    { name: "New learner name", role: "student" },
+  ]);
+  expect(
+    (
+      await db.query('select name from public.memberships where "userId"=$1', [
+        teacher,
+      ])
+    ).rows[0].name,
+  ).toBe("Teacher");
+  await as(student);
+  await expect(
+    act({ type: "rename", name: "Not permitted" }),
+  ).rejects.toThrow();
+});
+
+test("profile name validation rejects blank names atomically", async () => {
+  await db.exec("reset role;savepoint profile_change");
+  await expect(
+    db.query(`update auth.users set raw_user_meta_data=$1 where id=$2`, [
+      JSON.stringify({ name: "   " }),
+      student,
+    ]),
+  ).rejects.toThrow(/display name/);
+  await db.exec("rollback to savepoint profile_change");
+  expect(
+    (
+      await db.query('select name from public.memberships where "userId"=$1', [
+        student,
+      ])
+    ).rows[0].name,
+  ).toBe("Student");
+});

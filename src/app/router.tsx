@@ -1,3 +1,4 @@
+import { Profile } from "../features/profile/components/Profile";
 import { useEffect, useState } from "react";
 import {
   Dashboard,
@@ -31,6 +32,7 @@ export function Router({
   platform: boolean;
 }) {
   const [page, id] = route.split("/");
+  if (page === "profile") return <Profile />;
   if (platform) return <Organizations />;
   switch (page) {
     case "dashboard":

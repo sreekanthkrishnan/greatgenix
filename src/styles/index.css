@@ -352,9 +352,7 @@ small {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 11px 9px;
-  margin: 35px 0 30px;
-  border: 1px solid #4b6050;
+  margin-bottom:30px;
   border-radius: 9px;
   background: #ffffff04;
 }
@@ -3087,3 +3085,32 @@ body {
 .section-header-side { max-width: 100%; }
 .section-header-side .button { max-width: 100%; }
 @media (max-width: 700px) { .section-header-side:has(> .section-header-art:only-child) { display: none; } }
+
+/* Account profile and editable personal details. */
+.profile-link { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; color: inherit; text-decoration: none; border-radius: 8px; }
+.profile-link > div { min-width: 0; }
+.profile-link strong, .profile-link small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-profile { display: inline-flex; border-radius: 50%; }
+.profile-link:focus-visible, .topbar-profile:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.profile-layout { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.profile-summary { text-align: center; padding: 30px 24px; min-width: 0; }
+.profile-summary > .avatar { width: 76px; height: 76px; margin: 0 auto 18px; font-size: 24px; }
+.profile-summary h2 { margin-bottom: 8px; overflow-wrap: anywhere; }
+.profile-summary > p { color: var(--muted); margin: 0 0 16px; overflow-wrap: anywhere; }
+.profile-account-detail { display: flex; align-items: flex-start; gap: 10px; text-align: left; margin-top: 22px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.profile-account-detail svg { flex-shrink: 0; }
+.profile-account-detail span { min-width: 0; }
+.profile-details > h2 { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+.profile-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 18px; }
+.profile-help { font-size: 12px; line-height: 1.6; margin: 0; }
+.profile-info { margin: 0; }
+.profile-info > div { border-bottom: 1px solid var(--line); padding: 18px 0; }
+.profile-info > div:first-child { padding-top: 0; }
+.profile-info > div:last-child { border: 0; }
+.profile-info dt { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.profile-info dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+@media (max-width: 700px) { .profile-layout { grid-template-columns: 1fr; } }
+.production-app .sidebar { overflow-y: auto; overscroll-behavior: contain; }
+.production-app .sidebar > * { flex-shrink: 0; }
+.production-app .profile > .profile-link { padding: 0; }
+.profile-link .avatar { flex-shrink: 0; }

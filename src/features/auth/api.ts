@@ -29,3 +29,21 @@ export async function signOut() {
   const { error } = await database().auth.signOut();
   if (error) throw error;
 }
+
+export async function updateProfile(profile: {
+  name: string;
+  headline: string;
+  bio: string;
+}) {
+  const name = profile.name.trim();
+  const headline = profile.headline.trim();
+  const bio = profile.bio.trim();
+  if (!name || name.length > 100)
+    throw new Error("Enter a display name between 1 and 100 characters.");
+  if (headline.length > 120 || bio.length > 1000)
+    throw new Error("Your profile text is too long.");
+  const { error } = await database().auth.updateUser({
+    data: { name, headline, bio },
+  });
+  if (error) throw error;
+}

@@ -1,4 +1,5 @@
 import {
+  UserRound,
   BookOpen,
   CalendarDays,
   ChartNoAxesCombined,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 
 export const headerIcons = {
+  profile: UserRound,
   overview: ChartNoAxesCombined,
   courses: BookOpen,
   schedule: CalendarDays,

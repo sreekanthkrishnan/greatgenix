@@ -1,3 +1,4 @@
+import { roleContent } from "../../../shared/utils/roleContent";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -50,14 +51,16 @@ export function Assessments() {
     <>
       <PageHeading
         section="assessments"
-        summary={[{ value: assignments.length, label: "assessments" }, { value: new Set(assignments.map(a => a.courseId)).size, label: "courses" }]}
-        eyebrow="A CHANCE TO GROW"
+        summary={[
+          { value: assignments.length, label: "assessments" },
+          {
+            value: new Set(assignments.map((a) => a.courseId)).size,
+            label: "courses",
+          },
+        ]}
+        eyebrow={roleContent[viewer.role].assessmentsEyebrow.toUpperCase()}
         title={teacher ? "Assessment studio" : "My work & results"}
-        description={
-          teacher
-            ? "Notice the effort. Help the next idea take shape."
-            : "Show what you know, and discover what comes next."
-        }
+        description={roleContent[viewer.role].assessmentsDescription}
         action={
           teacher && (
             <Button onClick={() => setCreate(true)}>Create assessment</Button>
@@ -162,7 +165,11 @@ export function Assessments() {
       {!assignments.length && (
         <Empty
           title="Nothing due. Room to explore."
-          text="Assessments will appear when your teacher shares one."
+          text={
+            teacher
+              ? "Create an assessment for your learners to get started."
+              : "Assessments will appear when your teacher shares one."
+          }
         />
       )}
       {assignment && (

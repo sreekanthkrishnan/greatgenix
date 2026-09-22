@@ -24,10 +24,21 @@ export function Settings() {
     <>
       <PageHeading
         section="settings"
-        summary={[{ value: state.members.filter(m => m.orgId === viewer.orgId && m.active).length, label: "active members" }, { value: Object.values(org.features).filter(Boolean).length, label: "enabled features" }]}
-        eyebrow="A PLACE TO BELONG"
+        summary={[
+          {
+            value: state.members.filter(
+              (m) => m.orgId === viewer.orgId && m.active,
+            ).length,
+            label: "active members",
+          },
+          {
+            value: Object.values(org.features).filter(Boolean).length,
+            label: "enabled features",
+          },
+        ]}
+        eyebrow="YOUR ORGANIZATION CONTROLS"
         title="Organization settings"
-        description="Your people. Your identity. Your learning space."
+        description="Manage your organization’s members, appearance and enabled features."
       />
       <div className="settings-grid">
         <section className="panel">

@@ -13,6 +13,7 @@ const user = {
 };
 const token = `${Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url")}.${Buffer.from(JSON.stringify({ sub: uid, exp: Math.floor(Date.now() / 1000) + 3600, role: "authenticated" })).toString("base64url")}.test`;
 async function fixture(page: Page, role = "teacher-admin") {
+  const account = { ...user, user_metadata: { ...user.user_metadata } };
   const org = {
     id: orgId,
     name: "Willow Academy",
@@ -47,18 +48,32 @@ async function fixture(page: Page, role = "teacher-admin") {
     const url = new URL(req.url());
     const body = req.postDataJSON();
     if (url.pathname.startsWith("/auth/v1/")) {
+      if (url.pathname.endsWith("/user") && req.method() === "PUT") {
+        if (failNext) {
+          failNext = false;
+          return route.fulfill({
+            status: 400,
+            json: {
+              msg: "Profile could not be saved",
+              code: "validation_failed",
+            },
+          });
+        }
+        account.user_metadata = { ...account.user_metadata, ...body.data };
+        return route.fulfill({ json: account });
+      }
       if (url.pathname.endsWith("/logout"))
         return route.fulfill({ status: 204 });
       return route.fulfill({
         json: url.pathname.endsWith("/user")
-          ? user
+          ? account
           : {
               access_token: token,
               refresh_token: "test-refresh",
               expires_in: 3600,
               expires_at: Math.floor(Date.now() / 1000) + 3600,
               token_type: "bearer",
-              user,
+              user: account,
             },
       });
     }
@@ -67,9 +82,9 @@ async function fixture(page: Page, role = "teacher-admin") {
       if (name === "my_access")
         return route.fulfill({
           json: {
-            platform: false,
+            platform: role === "super-admin",
             orgs: [org],
-            memberships: [{ orgId, role }],
+            memberships: role === "super-admin" ? [] : [{ orgId, role }],
           },
         });
       if (name === "apply_action") {
@@ -125,7 +140,7 @@ async function fixture(page: Page, role = "teacher-admin") {
                   {
                     orgId,
                     userId: uid,
-                    name: "Maya Rao",
+                    name: account.user_metadata.name,
                     email: "admin@example.com",
                     role,
                     active: true,
@@ -445,4 +460,123 @@ test("completed lesson labels, header counts and progress filters follow the cur
   );
   await page.goto("/#/recordings");
   await expect(page.getByLabel("Library summary")).toContainText("0 completed");
+});
+
+test("profile edits persist, update identity, support cancel and retain failed edits", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  await signIn(page);
+  await page
+    .getByRole("link", { name: "Edit my profile", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "My profile", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Edit profile", exact: true }).click();
+  await page.getByLabel("Display name", { exact: true }).fill("Maya Sharma");
+  await page
+    .getByLabel("Headline", { exact: true })
+    .fill("Mathematics teacher");
+  await page
+    .getByLabel("About me", { exact: true })
+    .fill("Helping learners find patterns in everyday life.");
+  f.fail();
+  await page.getByRole("button", { name: "Save profile", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Profile could not be saved",
+  );
+  await expect(page.getByLabel("Display name", { exact: true })).toHaveValue(
+    "Maya Sharma",
+  );
+  await page.getByRole("button", { name: "Save profile", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Edit profile", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".profile-link")).toContainText("Maya Sharma");
+  await page.reload();
+  await expect(page.locator(".profile-summary")).toContainText(
+    "Mathematics teacher",
+  );
+  await expect(page.locator(".profile-details")).toContainText(
+    "Helping learners find patterns in everyday life.",
+  );
+  await page.getByRole("button", { name: "Edit profile", exact: true }).click();
+  await page.getByLabel("Display name", { exact: true }).fill("Discarded name");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.locator(".profile-summary h2")).toHaveText("Maya Sharma");
+  await page.screenshot({
+    path: "artifacts/profile-desktop.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Edit profile", exact: true }).click();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "artifacts/profile-mobile.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+});
+
+for (const [role, space, library] of [
+  ["student", "YOUR LEARNING SPACE", "YOUR LEARNING COLLECTION"],
+  ["teacher", "YOUR TEACHING SPACE", "YOUR TEACHING RESOURCES"],
+  [
+    "teacher-admin",
+    "YOUR TEACHING & ADMIN SPACE",
+    "YOUR ORGANIZATION’S LESSON LIBRARY",
+  ],
+]) {
+  test(`${role} sees relevant content and can access their profile`, async ({
+    page,
+  }) => {
+    await fixture(page, role);
+    await signIn(page);
+    await expect(page.locator(".section-eyebrow")).toHaveText(space);
+    await page.goto("/#/recordings");
+    await expect(page.locator(".section-eyebrow")).toHaveText(library);
+    await page.goto("/#/profile");
+    await expect(
+      page.getByRole("button", { name: "Edit profile", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("combobox", { name: /role/i })).toHaveCount(0);
+    if (role !== "teacher-admin") {
+      await page.goto("/#/settings");
+      await expect(
+        page.getByRole("heading", {
+          name: "Organization administrator access required",
+        }),
+      ).toBeVisible();
+    }
+  });
+}
+
+test("platform administrator has platform wording and editable profile", async ({
+  page,
+}) => {
+  await fixture(page, "super-admin");
+  await page.goto("/");
+  await page.getByLabel("Email address").fill("admin@example.com");
+  await page.getByLabel("Password", { exact: true }).fill("test-password");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.locator(".section-eyebrow")).toHaveText(
+    "YOUR PLATFORM SPACE",
+  );
+  await page.getByRole("link", { name: "My profile", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Edit profile", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".profile-summary .badge")).toHaveText(
+    "Platform administrator",
+  );
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "My profile", exact: true }),
+  ).toBeVisible();
 });
