@@ -86,6 +86,7 @@ export function Sessions({ id }: { id?: string }) {
           ← Class schedule
         </a>
         <PageHeading
+          section="schedule"
           eyebrow="LEARN TOGETHER"
           title={session.title}
           description={`${course?.subject || "Subject"} · ${course?.grade || "Grade"} · ${course?.batch || "Batch"}`}
@@ -169,6 +170,8 @@ export function Sessions({ id }: { id?: string }) {
   return (
     <>
       <PageHeading
+        section="schedule"
+        summary={[{ value: sessions.length, label: "class sessions" }, { value: new Set(sessions.map(s => s.courseId)).size, label: "courses" }]}
         eyebrow="MAKE TIME FOR DISCOVERY"
         title="Class schedule"
         description="A little structure. A lot to look forward to."

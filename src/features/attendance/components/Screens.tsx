@@ -31,6 +31,8 @@ export function Attendance() {
   return (
     <>
       <PageHeading
+        section="attendance"
+        summary={[{ value: sessions.length, label: "class sessions" }, { value: new Set(courses.flatMap(c => c.studentIds)).size, label: "learners" }]}
         eyebrow="EVERY LEARNER COUNTS"
         title="Attendance"
         description="A simple register. More time for the people in it."

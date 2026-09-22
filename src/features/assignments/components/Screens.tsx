@@ -49,6 +49,8 @@ export function Assessments() {
   return (
     <>
       <PageHeading
+        section="assessments"
+        summary={[{ value: assignments.length, label: "assessments" }, { value: new Set(assignments.map(a => a.courseId)).size, label: "courses" }]}
         eyebrow="A CHANCE TO GROW"
         title={teacher ? "Assessment studio" : "My work & results"}
         description={

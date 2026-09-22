@@ -22,7 +22,6 @@ import {
   Avatar,
   Badge,
   Button,
-  CourseArt,
   CourseCard,
   Empty,
   Modal,
@@ -128,6 +127,7 @@ export function Dashboard() {
     <>
       <PageHeading
         eyebrow="YOUR LEARNING SPACE"
+        section="overview"
         title={`Good to see you, ${name}.`}
         description={
           teacher
@@ -345,6 +345,8 @@ export function Courses() {
   return (
     <>
       <PageHeading
+        section="courses"
+        summary={[{ value: courses.length, label: "courses" }, { value: lessons.length, label: "lessons" }]}
         eyebrow="ROOM TO GROW"
         title={teacher ? "Your courses" : "My courses"}
         description="A few familiar subjects. Endless new possibilities."
@@ -431,32 +433,14 @@ export function CourseDetail({ id }: { id: string }) {
       <a className="back-link" href="#/courses">
         ← All courses
       </a>
-      <div className="course-detail-hero">
-        <div>
-          <Badge tone={course.color}>
-            {course.subject} · {course.grade}
-          </Badge>
-          <h1>{course.title}</h1>
-          <p>{course.description}</p>
-          <div className="inline-meta">
-            <Users size={16} />
-            {course.studentIds.length} learners<span>·</span>
-            {course.batch}
-          </div>
-          {canDelete && (
-            <div style={{ marginTop: "1.25rem" }}>
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmDelete(true)}
-                disabled={busy}
-              >
-                <Trash2 size={16} /> Delete course
-              </Button>
-            </div>
-          )}
-        </div>
-        <CourseArt color={course.color} large />
-      </div>
+      <PageHeading
+        section="courses"
+        eyebrow={`${course.subject} / ${course.grade} / ${course.batch}`}
+        title={course.title}
+        description={course.description}
+        summary={[{ value: course.studentIds.length, label: "learners" }, { value: list.length, label: "lessons" }]}
+        action={canDelete && <Button variant="secondary" onClick={() => setConfirmDelete(true)} disabled={busy}><Trash2 size={16} />Delete course</Button>}
+      />
       <div className="tabs" role="tablist" aria-label="Course views">
         {["lessons", "schedule", ...(teacher ? ["roster"] : [])].map((t) => (
           <button

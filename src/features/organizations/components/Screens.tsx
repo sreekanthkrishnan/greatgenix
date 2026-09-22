@@ -26,6 +26,8 @@ export function Organizations() {
   return (
     <>
       <PageHeading
+        section="organizations"
+        summary={[{ value: state.orgs.length, label: "organizations" }, { value: state.orgs.filter(o => o.active).length, label: "active" }]}
         eyebrow="PLATFORM WORKSPACE"
         title="Room for every organization"
         description="Independent learning spaces. Thoughtful controls."

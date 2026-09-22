@@ -56,6 +56,7 @@ export function Recordings({ id }: { id?: string }) {
         </a>
         <PageHeading
           eyebrow={`${course.subject.toUpperCase()} / ${course.grade.toUpperCase()}`}
+          artwork={<LessonArtwork type={lesson.type || "video"} />}
           title={lesson.title}
           description={`${lesson.duration} minutes · ${lesson.age} · ${course.batch}`}
         />
@@ -220,48 +221,41 @@ export function Recordings({ id }: { id?: string }) {
   );
   return (
     <>
-      <header className="library-header">
-        <div className="library-header-content">
-          <span className="library-eyebrow">
-            <BookOpen size={15} /> YOUR LEARNING COLLECTION
-          </span>
-          <h1>Lesson library</h1>
-          <p>
-            {teacher
-              ? "Bring your lessons and supporting resources together."
-              : "Pick up where you left off. Learn at your own pace."}
-          </p>
-          <div className="library-summary" aria-label="Library summary">
-            <span>
-              <strong>{lessons.length}</strong>{" "}
-              {lessons.length === 1 ? "lesson" : "lessons"}
-            </span>
-            <span>
-              <strong>{teacher ? publishedCount : completedCount}</strong>{" "}
-              {teacher ? "published" : "completed"}
-            </span>
-            <span>
-              <strong>
-                {teacher
-                  ? lessons.length - publishedCount
-                  : lessons.length - completedCount}
-              </strong>{" "}
-              {teacher ? "unpublished" : "to explore"}
-            </span>
-          </div>
-        </div>
-        <div className="library-header-side">
-          <div className="library-header-art" aria-hidden="true">
-            <LessonArtwork type="notes" />
-          </div>
-          {teacher && (
+      <PageHeading
+        eyebrow="YOUR LEARNING COLLECTION"
+        title="Lesson library"
+        description={
+          teacher
+            ? "Bring your lessons and supporting resources together."
+            : "Pick up where you left off. Learn at your own pace."
+        }
+        artwork={<LessonArtwork type="notes" />}
+        summaryLabel="Library summary"
+        summary={[
+          {
+            value: lessons.length,
+            label: lessons.length === 1 ? "lesson" : "lessons",
+          },
+          {
+            value: teacher ? publishedCount : completedCount,
+            label: teacher ? "published" : "completed",
+          },
+          {
+            value: teacher
+              ? lessons.length - publishedCount
+              : lessons.length - completedCount,
+            label: teacher ? "unpublished" : "to explore",
+          },
+        ]}
+        action={
+          teacher && (
             <Button onClick={() => setForm(true)}>
               <Plus size={17} />
               Add a lesson
             </Button>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
       <div className="library-toolbar">
         <label className="search-field">
           <Search size={17} />

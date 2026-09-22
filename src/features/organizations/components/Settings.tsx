@@ -23,6 +23,8 @@ export function Settings() {
   return (
     <>
       <PageHeading
+        section="settings"
+        summary={[{ value: state.members.filter(m => m.orgId === viewer.orgId && m.active).length, label: "active members" }, { value: Object.values(org.features).filter(Boolean).length, label: "enabled features" }]}
         eyebrow="A PLACE TO BELONG"
         title="Organization settings"
         description="Your people. Your identity. Your learning space."

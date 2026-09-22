@@ -1,3 +1,8 @@
+import {
+  HeaderArtwork,
+  headerIcons,
+  type HeaderSection,
+} from "./HeaderArtwork";
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   ArrowUpRight,
@@ -75,21 +80,47 @@ export function PageHeading({
   title,
   description,
   action,
+  section = "courses",
+  artwork,
+  summary,
+  summaryLabel = "Section summary",
 }: {
   eyebrow: string;
   title: string;
   description: string;
   action?: ReactNode;
+  section?: HeaderSection;
+  artwork?: ReactNode;
+  summary?: { value: ReactNode; label: string }[];
+  summaryLabel?: string;
 }) {
+  const Icon = headerIcons[section];
   return (
-    <div className="page-heading">
-      <div>
-        <div className="eyebrow">{eyebrow}</div>
+    <header className="section-header">
+      <div className="section-header-content">
+        <span className="section-eyebrow">
+          <Icon size={15} aria-hidden="true" />
+          {eyebrow}
+        </span>
         <h1>{title}</h1>
         <p>{description}</p>
+        {!!summary?.length && (
+          <div className="section-summary" aria-label={summaryLabel}>
+            {summary.map((item) => (
+              <span key={item.label}>
+                <strong>{item.value}</strong> {item.label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
-      {action}
-    </div>
+      <div className="section-header-side">
+        <div className="section-header-art" aria-hidden="true">
+          {artwork ?? <HeaderArtwork section={section} />}
+        </div>
+        {action}
+      </div>
+    </header>
   );
 }
 export function SectionHeading({
@@ -236,11 +267,7 @@ export function Modal({
     return () => dialog?.close();
   }, []);
   return (
-    <dialog
-      ref={ref}
-      className="modal"
-      onCancel={close}
-    >
+    <dialog ref={ref} className="modal" onCancel={close}>
       <div className="modal-heading">
         <div>
           <h2>{title}</h2>
