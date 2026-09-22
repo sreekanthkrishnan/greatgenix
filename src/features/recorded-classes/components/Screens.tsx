@@ -21,6 +21,7 @@ import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
 import { available } from "../../../shared/types";
 import { ResourceViewer } from "./ResourceViewer";
+import { LessonArtwork } from "./LessonArtwork";
 import { LessonReferences, MaterialThumbnail } from "./LessonReferences";
 
 export function Recordings({ id }: { id?: string }) {
@@ -29,6 +30,7 @@ export function Recordings({ id }: { id?: string }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [material, setMaterial] = useState("all");
+  const [progress, setProgress] = useState("all");
   const [form, setForm] = useState(false);
   const [report, setReport] = useState(false);
   const [reviewed, setReviewed] = useState(false);
@@ -70,6 +72,12 @@ export function Recordings({ id }: { id?: string }) {
             <Badge tone={lesson.status === "published" ? "sage" : "peach"}>
               {lesson.status === "review" ? "In review" : lesson.status}
             </Badge>
+            {!teacher && lesson.completeBy.includes(viewer.userId) && (
+              <span className="lesson-completed">
+                <CheckCircle2 size={15} />
+                Completed
+              </span>
+            )}
             <h3>{teacher ? "Lesson publishing" : "Your progress"}</h3>
             <p>
               {teacher
@@ -170,6 +178,7 @@ export function Recordings({ id }: { id?: string }) {
             ) : (
               <>
                 <Button
+                  disabled={busy}
                   onClick={() => act({ type: "complete", id: lesson.id })}
                 >
                   <CheckCircle2 size={17} />
@@ -194,34 +203,66 @@ export function Recordings({ id }: { id?: string }) {
       </>
     );
   }
+  const completedCount = lessons.filter((l) =>
+    l.completeBy.includes(viewer.userId),
+  ).length;
+  const publishedCount = lessons.filter((l) => l.status === "published").length;
   const filtered = lessons.filter(
     (l) =>
       `${l.title} ${l.subject} ${l.age}`
         .toLowerCase()
         .includes(search.toLowerCase()) &&
       (filter === "all" || l.status === filter) &&
-      (material === "all" || (l.type || "video") === material),
+      (material === "all" || (l.type || "video") === material) &&
+      (teacher ||
+        progress === "all" ||
+        l.completeBy.includes(viewer.userId) === (progress === "completed")),
   );
   return (
     <>
-      <PageHeading
-        eyebrow="LEARNING RESOURCES"
-        title="Lesson library"
-        description={
-          teacher
-            ? "Manage lessons and supporting materials for your courses."
-            : "Explore your lessons and supporting materials."
-        }
-        action={
-          teacher && (
+      <header className="library-header">
+        <div className="library-header-content">
+          <span className="library-eyebrow">
+            <BookOpen size={15} /> YOUR LEARNING COLLECTION
+          </span>
+          <h1>Lesson library</h1>
+          <p>
+            {teacher
+              ? "Bring your lessons and supporting resources together."
+              : "Pick up where you left off. Learn at your own pace."}
+          </p>
+          <div className="library-summary" aria-label="Library summary">
+            <span>
+              <strong>{lessons.length}</strong>{" "}
+              {lessons.length === 1 ? "lesson" : "lessons"}
+            </span>
+            <span>
+              <strong>{teacher ? publishedCount : completedCount}</strong>{" "}
+              {teacher ? "published" : "completed"}
+            </span>
+            <span>
+              <strong>
+                {teacher
+                  ? lessons.length - publishedCount
+                  : lessons.length - completedCount}
+              </strong>{" "}
+              {teacher ? "unpublished" : "to explore"}
+            </span>
+          </div>
+        </div>
+        <div className="library-header-side">
+          <div className="library-header-art" aria-hidden="true">
+            <LessonArtwork type="notes" />
+          </div>
+          {teacher && (
             <Button onClick={() => setForm(true)}>
               <Plus size={17} />
               Add a lesson
             </Button>
-          )
-        }
-      />
-      <div className="list-toolbar">
+          )}
+        </div>
+      </header>
+      <div className="library-toolbar">
         <label className="search-field">
           <Search size={17} />
           <input
@@ -255,9 +296,22 @@ export function Recordings({ id }: { id?: string }) {
             <option value="published">Published</option>
           </select>
         ) : (
-          <span className="muted">{filtered.length} lessons</span>
+          <select
+            aria-label="Filter lesson progress"
+            value={progress}
+            onChange={(e) => setProgress(e.target.value)}
+          >
+            <option value="all">All progress</option>
+            <option value="incomplete">To complete</option>
+            <option value="completed">Completed</option>
+          </select>
         )}
       </div>
+      <p className="library-results" role="status">
+        {filtered.length === lessons.length
+          ? `${lessons.length} ${lessons.length === 1 ? "lesson" : "lessons"}`
+          : `${filtered.length} of ${lessons.length} lessons`}
+      </p>
       <div className="recording-grid">
         {filtered.map((l) => {
           const course = state.courses.find((c) => c.id === l.courseId)!;
@@ -268,17 +322,29 @@ export function Recordings({ id }: { id?: string }) {
               href={`#/recordings/${l.id}`}
               key={l.id}
             >
-              <MaterialThumbnail
-                type={ltype}
-                fileName={l.fileName}
-                title={ltype === "notes" ? l.content?.slice(0, 100) : undefined}
-              />
+              <div className="lesson-card-cover">
+                <MaterialThumbnail
+                  type={ltype}
+                  fileName={l.fileName}
+                  title={
+                    ltype === "notes" ? l.content?.slice(0, 100) : undefined
+                  }
+                />
+                {!teacher && l.completeBy.includes(viewer.userId) && (
+                  <span className="lesson-completed">
+                    <CheckCircle2 size={15} />
+                    Completed
+                  </span>
+                )}
+              </div>
               <div className="course-card-body">
                 <div className="course-meta">
                   <span>{l.subject}</span>
-                  <Badge tone={l.status === "published" ? "sage" : "peach"}>
-                    {l.status === "review" ? "In review" : l.status}
-                  </Badge>
+                  {teacher && (
+                    <Badge tone={l.status === "published" ? "sage" : "peach"}>
+                      {l.status === "review" ? "In review" : l.status}
+                    </Badge>
+                  )}
                 </div>
                 <h3>{l.title}</h3>
                 <p>

@@ -38,6 +38,9 @@ async function fixture(page: Page, role = "teacher-admin") {
   const sessions: Record<string, unknown>[] = [];
   const lessons: Record<string, any>[] = [];
   const assignments: Record<string, unknown>[] = [];
+  const enrollments: Record<string, unknown>[] = [];
+  const completions: { orgId: string; lessonId: string; studentId: string }[] =
+    [];
   let failNext = false;
   await page.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -86,6 +89,13 @@ async function fixture(page: Page, role = "teacher-admin") {
         if (a.type === "lesson")
           lessons.push({ ...a.lesson, mediaStatus: "pending", references: [] });
         const lesson = lessons.find((l) => l.id === a.id);
+        if (a.type === "complete" && lesson) {
+          const index = completions.findIndex(
+            (c) => c.lessonId === a.id && c.studentId === uid,
+          );
+          if (index >= 0) completions.splice(index, 1);
+          else completions.push({ orgId, lessonId: a.id, studentId: uid });
+        }
         if (a.type === "lesson-status" && lesson) lesson.status = a.status;
         if (a.type === "lesson-reference" && lesson)
           lesson.references.push(a.reference);
@@ -104,30 +114,38 @@ async function fixture(page: Page, role = "teacher-admin") {
     }
     const table = url.pathname.split("/").pop();
     const data =
-      table === "lessons"
-        ? lessons
-        : table === "memberships"
-          ? [
-              {
-                orgId,
-                userId: uid,
-                name: "Maya Rao",
-                email: "admin@example.com",
-                role,
-                active: true,
-              },
-            ]
-          : table === "courses"
-            ? courses
-            : table === "sessions"
-              ? sessions
-              : table === "assignments"
-                ? assignments
-                : [];
+      table === "enrollments"
+        ? enrollments
+        : table === "completions"
+          ? completions
+          : table === "lessons"
+            ? lessons
+            : table === "memberships"
+              ? [
+                  {
+                    orgId,
+                    userId: uid,
+                    name: "Maya Rao",
+                    email: "admin@example.com",
+                    role,
+                    active: true,
+                  },
+                ]
+              : table === "courses"
+                ? courses
+                : table === "sessions"
+                  ? sessions
+                  : table === "assignments"
+                    ? assignments
+                    : [];
     return route.fulfill({ json: data });
   });
   return {
     org,
+    courses,
+    lessons,
+    enrollments,
+    completions,
     fail: () => {
       failNext = true;
     },
@@ -310,13 +328,11 @@ test("lesson republishing and typed references survive reload", async ({
   await page.getByRole("button", { name: "Add reference" }).click();
   await page.getByLabel("Reference type").selectOption("document");
   await page.getByLabel("Reference title").fill("Worksheet");
-  await page
-    .getByLabel("Upload reference document")
-    .setInputFiles({
-      name: "worksheet.txt",
-      mimeType: "text/plain",
-      buffer: Buffer.from("Solve x + 2 = 4"),
-    });
+  await page.getByLabel("Upload reference document").setInputFiles({
+    name: "worksheet.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("Solve x + 2 = 4"),
+  });
   await page.getByRole("button", { name: "Save reference" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.reload();
@@ -350,4 +366,83 @@ test("lesson republishing and typed references survive reload", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test("completed lesson labels, header counts and progress filters follow the current learner", async ({
+  page,
+}) => {
+  const data = await fixture(page, "student");
+  const courseId = "00000000-0000-4000-8000-000000000020";
+  const lessonId = "00000000-0000-4000-8000-000000000030";
+  data.courses.push({
+    id: courseId,
+    orgId,
+    teacherId: uid,
+    title: "Algebra",
+    subject: "Math",
+    grade: "Grade 9",
+    batch: "A",
+    description: "Equations",
+    color: "sage",
+  });
+  data.enrollments.push({ orgId, courseId, studentId: uid });
+  data.lessons.push({
+    id: lessonId,
+    orgId,
+    courseId,
+    title: "Linear equations",
+    duration: 20,
+    age: "13–15 years",
+    subject: "Math",
+    status: "published",
+    type: "notes",
+    content: "Balance both sides.",
+    references: [],
+  });
+  // Another learner's completion must not mark this learner's lesson complete.
+  data.completions.push({ orgId, lessonId, studentId: "another-learner" });
+  await signIn(page);
+  await page.goto("/#/recordings");
+  await expect(page.getByLabel("Library summary")).toContainText("0 completed");
+  await expect(page.locator(".recording-card .lesson-completed")).toHaveCount(
+    0,
+  );
+  await page.getByRole("link", { name: /Linear equations/ }).click();
+  await page.getByRole("button", { name: "Mark complete" }).click();
+  await expect(page.locator(".lesson-sidebar .lesson-completed")).toHaveText(
+    "Completed",
+  );
+  await page.goto("/#/recordings");
+  await page.reload();
+  await expect(page.locator(".recording-card .lesson-completed")).toHaveText(
+    "Completed",
+  );
+  await expect(page.getByLabel("Library summary")).toContainText("1 completed");
+  await page.getByLabel("Filter lesson progress").selectOption("incomplete");
+  await expect(
+    page.getByRole("heading", { name: "No lessons found" }),
+  ).toBeVisible();
+  await page.getByLabel("Filter lesson progress").selectOption("completed");
+  await page.screenshot({
+    path: "artifacts/lesson-library-completed.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "artifacts/lesson-library-mobile.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.getByRole("link", { name: /Linear equations/ }).click();
+  await page.getByRole("button", { name: "Undo completion" }).click();
+  await expect(page.locator(".lesson-sidebar .lesson-completed")).toHaveCount(
+    0,
+  );
+  await page.goto("/#/recordings");
+  await expect(page.getByLabel("Library summary")).toContainText("0 completed");
 });
