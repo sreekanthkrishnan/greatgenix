@@ -7,7 +7,7 @@ import {
   Plus,
   Search,
   ShieldCheck,
-  Trash2,
+    Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
