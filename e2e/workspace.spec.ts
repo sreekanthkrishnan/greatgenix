@@ -710,3 +710,75 @@ test("platform-only admins can manage an empty platform without an organization 
   await page.getByRole("button", { name: "Open profile menu" }).click();
   await expect(page.locator(".workspace-switcher")).toHaveCount(0);
 });
+
+for (const [role, label] of [
+  ["student", "Student"],
+  ["teacher", "Teacher"],
+  ["teacher-admin", "Teacher administrator"],
+  ["super-admin", "Platform administrator"],
+]) {
+  test(`${role} can edit and reload their personal profile through the header avatar`, async ({
+    page,
+  }) => {
+    const f = await fixture(page, role);
+    // Personal profile access does not depend on enabled learning features or enrollment.
+    f.org.features = {
+      live: false,
+      recordings: false,
+      attendance: false,
+      assessments: false,
+    };
+    await page.goto("/");
+    await page.getByLabel("Email address").fill("admin@example.com");
+    await page.getByLabel("Password", { exact: true }).fill("test-password");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.getByRole("button", { name: "Open profile menu" }).click();
+    await page.getByRole("link", { name: "My profile", exact: true }).click();
+    await expect(page).toHaveURL(/#\/profile$/);
+    await expect(page.locator(".profile-summary .badge")).toHaveText(label);
+    await page
+      .getByRole("button", { name: "Edit profile", exact: true })
+      .click();
+    await page
+      .getByLabel("Display name", { exact: true })
+      .fill(`${label} Name`);
+    await page
+      .getByLabel("Headline", { exact: true })
+      .fill(role === "student" ? "Learning mathematics" : "My introduction");
+    await page
+      .getByLabel("About me", { exact: true })
+      .fill("This is my personal profile.");
+    await page
+      .getByRole("button", { name: "Save profile", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Edit profile", exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".profile-summary h2")).toHaveText(
+      `${label} Name`,
+    );
+    await expect(page.locator(".profile-details")).toContainText(
+      "This is my personal profile.",
+    );
+    await expect(page.locator(".profile-summary .badge")).toHaveText(label);
+    if (role === "student") {
+      await page.screenshot({
+        path: "artifacts/student-profile.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.getByRole("button", { name: "Open profile menu" }).click();
+      await page.getByRole("link", { name: "My profile", exact: true }).click();
+      await expect(
+        page.getByRole("button", { name: "Edit profile", exact: true }),
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+  });
+}

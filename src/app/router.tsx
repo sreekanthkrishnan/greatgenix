@@ -41,54 +41,48 @@ function RecordingsRoute() {
   return <Recordings id={id} />;
 }
 
-export function Router({
-  platform,
-}: {
-  route?: string;
-  platform: boolean;
-}) {
+export function Router({ platform }: { route?: string; platform: boolean }) {
   const location = useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  if (platform) {
-    return (
-      <Routes>
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/organizations" element={<Organizations />} />
-        <Route path="/" element={<Navigate to="/organizations" replace />} />
-        <Route path="*" element={<Organizations />} />
-      </Routes>
-    );
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/courses" element={<Courses />} />
-      <Route path="/courses/:id" element={<CourseDetailRoute />} />
-      <Route path="/sessions" element={<SessionsRoute />} />
-      <Route path="/sessions/:id" element={<SessionsRoute />} />
-      <Route path="/recordings" element={<RecordingsRoute />} />
-      <Route path="/recordings/:id" element={<RecordingsRoute />} />
-      <Route path="/assessments" element={<Assessments />} />
-      <Route path="/attendance" element={<Attendance />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/organizations" element={<Organizations />} />
+      {/* Personal profiles are available to every signed-in role. */}
       <Route path="/profile" element={<Profile />} />
-      <Route
-        path="*"
-        element={
-          <Unavailable
-            title="Let’s find your way back"
-            text="This page could not be found."
+      {platform ? (
+        <>
+          <Route path="/organizations" element={<Organizations />} />
+          <Route path="/" element={<Navigate to="/organizations" replace />} />
+          <Route path="*" element={<Organizations />} />
+        </>
+      ) : (
+        <>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:id" element={<CourseDetailRoute />} />
+          <Route path="/sessions" element={<SessionsRoute />} />
+          <Route path="/sessions/:id" element={<SessionsRoute />} />
+          <Route path="/recordings" element={<RecordingsRoute />} />
+          <Route path="/recordings/:id" element={<RecordingsRoute />} />
+          <Route path="/assessments" element={<Assessments />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/organizations" element={<Organizations />} />
+          <Route
+            path="*"
+            element={
+              <Unavailable
+                title="Let’s find your way back"
+                text="This page could not be found."
+              />
+            }
           />
-        }
-      />
+        </>
+      )}
     </Routes>
   );
 }
-
