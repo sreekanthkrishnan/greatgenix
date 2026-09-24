@@ -52,7 +52,13 @@ export function ProfileMenu({
       className="header-profile-menu"
       ref={container}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+        // Safari can blur to no element during a tap inside the menu. Closing
+        // here would remove the link before its click can navigate.
+        // Outside taps are handled by the document pointerdown listener.
+        if (
+          event.relatedTarget &&
+          !event.currentTarget.contains(event.relatedTarget)
+        )
           setOpen(false);
       }}
     >

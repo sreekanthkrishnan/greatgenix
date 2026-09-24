@@ -66,6 +66,7 @@ The workspace root is the application root; an extra nested `edu-saas` directory
 ```sh
 npm run build
 npm test
+npx playwright install webkit # iPad touch checks
 npm run test:e2e
 npx --yes deno check supabase/functions/*/index.ts
 ```
