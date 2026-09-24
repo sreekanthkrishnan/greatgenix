@@ -3137,3 +3137,27 @@ button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { backg
 .workspace-switcher strong, .workspace-switcher small { display: block; overflow-wrap: anywhere; }
 .workspace-switcher strong { font-size: 13px; font-weight: 600; }
 .workspace-switcher small { font-size: 11px; margin-top: 4px; color: var(--muted); }
+
+/* Organization subscriptions and platform billing. */
+.billing-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; margin: 22px 0; }
+.billing-plan { text-align: left; color: var(--ink); display: flex; flex-direction: column; gap: 10px; }
+.billing-plan h2, .billing-plan h3, .billing-plan p { margin: 0; }
+.billing-plan > strong { font-size: 26px; }
+.billing-plan.selected { outline: 2px solid var(--green); outline-offset: 2px; }
+.billing-plan > .button { margin-top: auto; }
+.billing-features { list-style: none; margin: 10px 0 18px; padding: 0; display: grid; gap: 9px; font-size: 13px; }
+.billing-features li { display: flex; align-items: center; gap: 8px; }
+.billing-features svg { color: var(--green); flex-shrink: 0; }
+.billing-feature-fields { border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 10px; padding: 16px; }
+.billing-feature-fields legend { font-size: 13px; padding: 0 5px; }
+.billing-status { margin-bottom: 24px; }
+.billing-status h2 { margin-top: 16px; }
+.billing-checkout { max-width: 720px; display: grid; gap: 16px; }
+.billing-checkout .button { justify-self: start; }
+.billing-quote { padding-top: 16px; border-top: 1px solid var(--line); }
+.billing-admin { display: grid; gap: 16px; }
+.billing-admin h3 { margin: 12px 0 0; }
+.billing-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.billing-payment { padding: 18px; border: 1px solid var(--line); border-radius: 12px; }
+.billing-payment h4 { margin: 0 0 10px; }
+.billing-payment > p { font-size: 13px; color: var(--muted); }

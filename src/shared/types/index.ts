@@ -16,6 +16,17 @@ export type Branding = {
   tagline: string;
 };
 export type Org = {
+  approval_status?: "pending" | "approved" | "rejected";
+  review_note?: string;
+  accessible?: boolean;
+  billing_status?:
+    | "pending"
+    | "rejected"
+    | "active"
+    | "suspended"
+    | "pending_payment"
+    | "subscription_required";
+  subscription_end?: string | null;
   slug?: string;
   branding?: Branding;
   id: string;
@@ -136,7 +147,9 @@ export function available(
   feature: Feature,
 ) {
   const org = state.orgs.find((o) => o.id === viewer.orgId);
-  return Boolean(org?.active && org.features[feature]);
+  return Boolean(
+    org?.active && org.accessible !== false && org.features[feature],
+  );
 }
 export function visibleLessons(state: WorkspaceState, viewer: Viewer) {
   if (!available(state, viewer, "recordings")) return [];

@@ -62,6 +62,10 @@ beforeAll(async () => {
     await rpc("create_organization", ["Beta Academy", "beta-academy"])
   ).rows[0].result as string;
   await db.exec("reset role");
+  // Existing classroom fixtures have approved, paid access; new signup is tested separately.
+  await db.query("update public.organizations set approval_status='approved' where id in ($1,$2)", [org,otherOrg]);
+  await db.query(`insert into public.subscription_plans(id,name,price_minor,currency,duration_days,features) values($1,'Test plan',1000,'INR',30,'{"live":true,"recordings":true,"attendance":true,"assessments":true}')`, [id(80)]);
+  await db.query(`insert into public.organization_subscriptions(org_id,plan_id,plan_name,price_minor,total_minor,currency,duration_days,features,status,starts_at,ends_at) select id,$1,'Test plan',1000,1000,'INR',30,'{"live":true,"recordings":true,"attendance":true,"assessments":true}','active',now(),now()+interval '30 days' from public.organizations`, [id(80)]);
   await db.query(
     `insert into public.memberships("orgId","userId",name,email,role) values($1,$2,'Teacher','teacher@example.com','teacher'),($1,$3,'Student','student@example.com','student'),($4,$5,'OtherStudent','otherstudent@example.com','student')`,
     [org, teacher, student, otherOrg, otherStudent],
@@ -86,18 +90,6 @@ beforeAll(async () => {
     courseId: course,
     studentId: student,
     enrolled: true,
-  });
-  await act({
-    type: "feature",
-    orgId: org,
-    feature: "assessments",
-    enabled: true,
-  });
-  await act({
-    type: "feature",
-    orgId: org,
-    feature: "attendance",
-    enabled: true,
   });
   await act({
     type: "lesson",
@@ -252,14 +244,10 @@ test("revoked members lose read access with the same auth identity", async () =>
   await as(student);
   expect((await db.query("select id from public.courses")).rows).toEqual([]);
 });
-test("feature disabling preserves records but denies reads", async () => {
+test("subscription entitlements deny reads without deleting records", async () => {
+  await db.exec("reset role");
+  await db.query(`update public.organization_subscriptions set features=features || '{"assessments":false}' where org_id=$1`, [org]);
   await as(admin);
-  await act({
-    type: "feature",
-    orgId: org,
-    feature: "assessments",
-    enabled: false,
-  });
   expect((await db.query("select id from public.assignments")).rows).toEqual(
     [],
   );
@@ -538,10 +526,7 @@ test("platform role grants metadata administration, not tenant classroom access"
     platform: true,
   });
   expect((await db.query("select * from public.courses")).rows).toEqual([]);
-  await act(
-    { type: "feature", orgId: otherOrg, feature: "recordings", enabled: false },
-    otherOrg,
-  );
+  await expect(act({ type: "feature", orgId: otherOrg, feature: "recordings", enabled: false }, otherOrg)).rejects.toThrow(/subscription/);
 });
 test("suspended organizations remain identifiable but grant no learning access", async () => {
   await db.exec("reset role");
@@ -762,4 +747,138 @@ test("organization and platform administrator roles are independent and can coex
     memberships: [{ orgId: org, role: "teacher-admin" }],
   });
   await expect(act({ type: "org-status", orgId: otherOrg })).rejects.toThrow();
+});
+
+async function billingSetup() {
+  await db.exec('reset role');
+  await db.query('insert into public.platform_admins("userId") values($1)', [invitee]);
+  await db.query('delete from public.organization_subscriptions');
+  await as(invitee);
+}
+async function denied(operation: () => Promise<unknown>, message?: RegExp) {
+  await db.exec('savepoint billing_denied');
+  await expect(operation()).rejects.toThrow(message);
+  await db.exec('rollback to savepoint billing_denied');
+}
+async function coupon(overrides: Record<string, unknown> = {}) {
+  return (await rpc('save_subscription_coupon', [JSON.stringify({
+    code: 'WELCOME', percent_off: 50, bonus_features: { assessments: true },
+    starts_at: '2020-01-01T00:00:00Z', expires_at: '2099-01-01T00:00:00Z', max_redemptions: 1,
+    ...overrides,
+  })])).rows[0].result as string;
+}
+async function accessOrg(o = org) {
+  const access = (await rpc('my_access')).rows[0].result as {orgs: {id:string; accessible:boolean; features:Record<string,boolean>; billing_status:string}[]};
+  return access.orgs.find(g => g.id === o)!;
+}
+test('new organization requires platform review and a subscription before classroom access', async () => {
+  await billingSetup();
+  await as(teacher);
+  const fresh = (await rpc('create_organization', ['New School','new-school'])).rows[0].result as string;
+  expect(await accessOrg(fresh)).toMatchObject({accessible:false,billing_status:'pending'});
+  await denied(() => rpc('review_organization',[fresh,true,'']), /Platform administrator/);
+  await denied(() => rpc('request_subscription',[fresh,id(80),'']), /approved/);
+  await denied(() => act({type:'course',course:{id:id(90),orgId:fresh,title:'Blocked'}},fresh));
+  await as(invitee);
+  await rpc('review_organization',[fresh,true,'Verified school']);
+  await as(teacher);
+  expect(await accessOrg(fresh)).toMatchObject({accessible:false,billing_status:'subscription_required'});
+});
+test('paid subscriptions activate only on platform payment confirmation and preserve quoted terms', async () => {
+  await billingSetup();
+  await coupon();
+  await as(admin);
+  const sub = (await rpc('request_subscription',[org,id(80),' welcome '])).rows[0].result;
+  expect(await accessOrg()).toMatchObject({accessible:false,billing_status:'pending_payment'});
+  expect((await db.query('select id from public.courses')).rows).toEqual([]);
+  await denied(() => rpc('confirm_subscription_payment',[sub,'FAKE']), /Platform administrator/);
+  await denied(() => rpc('request_subscription',[org,id(80),'']), /already exists/);
+  await as(invitee);
+  await rpc('save_subscription_plan',[JSON.stringify({id:id(80),name:'Changed',price_minor:9000,currency:'USD',duration_days:365,features:{},active:false})]);
+  await denied(() => rpc('confirm_subscription_payment',[sub,' ']), /reference/);
+  await rpc('confirm_subscription_payment',[sub,'BANK-123']);
+  const saved = (await db.query('select * from public.organization_subscriptions where id=$1',[sub])).rows[0];
+  expect(saved).toMatchObject({total_minor:500,currency:'INR',duration_days:30,plan_name:'Test plan',payment_reference:'BANK-123',confirmed_by:invitee});
+  await denied(() => rpc('confirm_subscription_payment',[sub,'DUPLICATE']), /not awaiting/);
+  await as(admin);
+  expect((await accessOrg()).accessible).toBe(true);
+  expect((await db.query('select id from public.courses')).rows).toEqual([{id:course}]);
+});
+test('fully discounted coupons activate bonus features automatically, including live attendance dependency', async () => {
+  await billingSetup();
+  await rpc('save_subscription_plan',[JSON.stringify({id:id(80),name:'Core',price_minor:1000,currency:'INR',duration_days:30,features:{},active:true})]);
+  await coupon({percent_off:100,bonus_features:{attendance:true,assessments:true}});
+  await as(admin);
+  const sub = (await rpc('request_subscription',[org,id(80),'WELCOME'])).rows[0].result;
+  expect(await accessOrg()).toMatchObject({accessible:true,features:{live:true,attendance:true,assessments:true,recordings:false}});
+  expect((await db.query('select total_minor,status from public.organization_subscriptions where id=$1',[sub])).rows[0]).toEqual({total_minor:0,status:'active'});
+  await denied(() => rpc('cancel_subscription',[sub]), /platform admins/);
+  await as(invitee);
+  await rpc('cancel_subscription',[sub]);
+  await as(admin);
+  expect((await accessOrg()).accessible).toBe(false);
+});
+test.each([
+  {active:false}, {expires_at:'2021-01-01T00:00:00Z'},
+  {starts_at:'2098-01-01T00:00:00Z'}, {org_id:'other'}, {plan_id:'other'},
+])('coupon rejects ineligible conditions %j', async (condition) => {
+  await billingSetup();
+  if ('org_id' in condition) condition = {...condition,org_id:otherOrg};
+  if ('plan_id' in condition) {
+    const plan = (await rpc('save_subscription_plan',[JSON.stringify({name:'Other',price_minor:2000,currency:'INR',duration_days:30,features:{}})])).rows[0].result;
+    condition = {...condition,plan_id:plan as string};
+  }
+  await coupon(condition);
+  await as(admin);
+  await denied(() => rpc('quote_subscription',[org,id(80),'WELCOME']), /invalid, expired, or not eligible/);
+});
+test('coupon reservations enforce global limits, release on cancellation, and prevent reuse', async () => {
+  await billingSetup();
+  await coupon();
+  await as(admin);
+  const sub = (await rpc('request_subscription',[org,id(80),'WELCOME'])).rows[0].result;
+  await as(otherAdmin);
+  await denied(() => rpc('quote_subscription',[otherOrg,id(80),'WELCOME']), /limit reached/);
+  await as(admin);
+  await rpc('cancel_subscription',[sub]);
+  const next = (await rpc('request_subscription',[org,id(80),'WELCOME'])).rows[0].result;
+  await as(invitee);
+  await rpc('confirm_subscription_payment',[next,'BANK-OK']);
+  await db.exec('reset role');
+  await db.query("update public.organization_subscriptions set starts_at=now()-interval '40 days',ends_at=now()-interval '10 days' where id=$1",[next]);
+  await as(admin);
+  expect((await accessOrg()).accessible).toBe(false);
+  await denied(() => rpc('request_subscription',[org,id(80),'WELCOME']), /already used/);
+});
+test('billing permissions prevent self approval, price changes, direct writes and cross organization requests', async () => {
+  await billingSetup();
+  await coupon();
+  await as(admin);
+  await denied(() => rpc('save_subscription_plan',['{}']), /Platform administrator/);
+  await denied(() => rpc('save_subscription_coupon',['{}']), /Platform administrator/);
+  await denied(() => rpc('review_organization',[org,true,'']), /Platform administrator/);
+  await denied(() => db.query("update public.organizations set approval_status='approved' where id=$1",[org]));
+  await denied(() => db.query("update public.subscription_plans set price_minor=0"));
+  await denied(() => db.query("update public.organization_subscriptions set status='active'"));
+  await denied(() => rpc('request_subscription',[otherOrg,id(80),'']), /Organization administrator/);
+  expect((await db.query('select * from public.subscription_coupons')).rows).toEqual([]);
+  await as(student);
+  await denied(() => rpc('quote_subscription',[org,id(80),'']), /Organization administrator/);
+  expect((await db.query('select * from public.organization_subscriptions')).rows).toEqual([]);
+});
+test('rejection and suspension revoke paid access while billing remains readable to owner', async () => {
+  await billingSetup();
+  await as(admin);
+  const sub = (await rpc('request_subscription',[org,id(80),''])).rows[0].result;
+  await as(invitee);
+  await rpc('confirm_subscription_payment',[sub,'RECEIPT']);
+  await rpc('review_organization',[org,false,'Review failed']);
+  await as(admin);
+  expect(await accessOrg()).toMatchObject({accessible:false,billing_status:'rejected'});
+  expect((await db.query('select id from public.organization_subscriptions')).rows).toEqual([{id:sub}]);
+  await as(invitee);
+  await rpc('review_organization',[org,true,'']);
+  await act({type:'org-status',orgId:org});
+  await as(admin);
+  expect((await accessOrg()).accessible).toBe(false);
 });

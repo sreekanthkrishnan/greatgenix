@@ -1,3 +1,4 @@
+import { SubscriptionPage } from "../../features/billing/SubscriptionPage";
 import { Link, NavLink } from "react-router-dom";
 import { ProfileMenu } from "../../shared/components/ProfileMenu";
 import { useAuth } from "../providers/AuthProvider";
@@ -8,6 +9,8 @@ import {
 } from "../../shared/utils/roleContent";
 import { useEffect, useState } from "react";
 import {
+  CreditCard,
+  Ticket,
   BookOpen,
   CalendarDays,
   ClipboardCheck,
@@ -74,7 +77,11 @@ export function WorkspaceLayout() {
     setMenu(false);
   }, [route]);
   const nav = platform
-    ? [{ id: "organizations", label: "Organizations", icon: Users }]
+    ? [
+        { id: "organizations", label: "Organizations", icon: Users },
+        { id: "plans", label: "Subscription plans", icon: CreditCard },
+        { id: "coupons", label: "Coupons", icon: Ticket },
+      ]
     : [
         { id: "dashboard", label: "Overview", icon: LayoutDashboard },
         {
@@ -104,16 +111,16 @@ export function WorkspaceLayout() {
           ? [{ id: "attendance", label: "Attendance", icon: Users }]
           : []),
         ...(viewer.role === "teacher-admin"
-          ? [{ id: "settings", label: "Organization", icon: Settings2 }]
+          ? [
+              { id: "settings", label: "Organization", icon: Settings2 },
+              { id: "subscription", label: "Subscription", icon: CreditCard },
+            ]
           : []),
       ];
   return (
     <div className="app production-app">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <Link
-          className="brand"
-          to={platform ? "/organizations" : "/dashboard"}
-        >
+        <Link className="brand" to={platform ? "/organizations" : "/dashboard"}>
           {branding.logoUrl ? (
             <img
               className="brand-image"
@@ -241,6 +248,11 @@ export function WorkspaceLayout() {
                 title="This organization is suspended"
                 text="Contact the platform administrator to restore access. Existing records are preserved."
               />
+            ) : !platform &&
+              "accessible" in org &&
+              org.accessible === false &&
+              route.split("/")[0] !== "profile" ? (
+              <SubscriptionPage />
             ) : (
               <Router route={route} platform={platform} />
             )}

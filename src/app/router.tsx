@@ -1,3 +1,6 @@
+import { PlanManager } from "../features/billing/PlanManager";
+import { CouponManager } from "../features/billing/CouponManager";
+import { SubscriptionPage } from "../features/billing/SubscriptionPage";
 import { Profile } from "../features/profile/components/Profile";
 import { useEffect } from "react";
 import {
@@ -52,6 +55,8 @@ export function Router({ platform }: { route?: string; platform: boolean }) {
     <Routes>
       {/* Personal profiles are available to every signed-in role. */}
       <Route path="/profile" element={<Profile />} />
+      <Route path="/plans" element={<PlanManager />} />
+      <Route path="/coupons" element={<CouponManager />} />
       {platform ? (
         <>
           <Route path="/organizations" element={<Organizations />} />
@@ -71,6 +76,7 @@ export function Router({ platform }: { route?: string; platform: boolean }) {
           <Route path="/assessments" element={<Assessments />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/organizations" element={<Organizations />} />
           <Route
             path="*"

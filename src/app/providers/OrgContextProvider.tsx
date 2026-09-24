@@ -60,13 +60,19 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     }
   });
   const [platformRoute, setPlatformRoute] = useState(
-    path.startsWith("/organizations") ||
+    ["/organizations", "/plans", "/coupons"].some((route) =>
+      path.startsWith(route),
+    ) ||
       ((!path || path === "/" || path.startsWith("/profile")) &&
         preference.platform === true),
   );
   useEffect(() => {
     if (!path.startsWith("/profile")) {
-      setPlatformRoute(path.startsWith("/organizations"));
+      setPlatformRoute(
+        ["/organizations", "/plans", "/coupons"].some((route) =>
+          path.startsWith(route),
+        ),
+      );
     }
   }, [path]);
   const [selected, setSelected] = useState(preference.orgId || "");
@@ -124,10 +130,14 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     }
     notify("");
   }
+  const workspaceAllowed =
+    access.data?.orgs.find((o) => o.id === orgId)?.accessible !== false;
   const workspace = useQuery({
     queryKey: ["workspace", userId, orgId, membership?.role],
     queryFn: () => loadWorkspace(orgId),
-    enabled: Boolean(orgId && membership && !platformActive),
+    enabled: Boolean(
+      orgId && membership && !platformActive && workspaceAllowed,
+    ),
     refetchInterval: 30000,
   });
   useEffect(() => () => queryClient.clear(), [userId]);
@@ -181,13 +191,13 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     (!access.data.platform && !membership)
   )
     return <Onboarding refresh={refresh} />;
-  if (workspace.isPending && membership && !platformActive)
+  if (workspace.isPending && membership && !platformActive && workspaceAllowed)
     return (
       <div className="loading-screen" role="status">
         Loading your organization…
       </div>
     );
-  if (workspace.isError && membership && !platformActive)
+  if (workspace.isError && membership && !platformActive && workspaceAllowed)
     return (
       <div className="auth-card">
         <Notice>{workspace.error.message}</Notice>
@@ -203,7 +213,9 @@ export function OrgContextProvider({ children }: { children: ReactNode }) {
     <Context.Provider
       value={{
         state: {
-          ...(membership && !platformActive ? workspace.data || empty : empty),
+          ...(membership && !platformActive && workspaceAllowed
+            ? workspace.data || empty
+            : empty),
           orgs: access.data.orgs,
         },
         viewer,

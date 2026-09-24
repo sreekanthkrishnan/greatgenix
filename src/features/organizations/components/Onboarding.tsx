@@ -30,12 +30,12 @@ export function Onboarding({ refresh }: { refresh: () => Promise<void> }) {
       <section className="auth-card">
         <span className="eyebrow">ROOM TO GROW</span>
         <h1>
-          {token ? "Your classroom is waiting." : "Make this space your own."}
+          {token ? "Your classroom is waiting." : "Request an organization."}
         </h1>
         <p>
           {token
             ? "Accept this invitation with the email address your administrator invited."
-            : "Create your organization, then invite your teachers and learners."}
+            : "Submit your organization for platform administrator review. Once approved, select a subscription to activate your workspace."}
         </p>
         <form className="form" onSubmit={submit}>
           {!token && (
@@ -63,7 +63,7 @@ export function Onboarding({ refresh }: { refresh: () => Promise<void> }) {
               ? "Please wait…"
               : token
                 ? "Accept invitation"
-                : "Create organization"}
+                : "Submit for review"}
           </Button>
           <Button
             type="button"

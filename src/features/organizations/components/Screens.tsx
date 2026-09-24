@@ -1,3 +1,4 @@
+import { OrganizationBilling } from "../../billing/OrganizationBilling";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
@@ -10,7 +11,6 @@ import {
   Unavailable,
 } from "../../../shared/components";
 import { ActionForm } from "../../../shared/components/ActionForm";
-import { featureLabels, type Feature } from "../../../shared/types";
 
 export function Organizations() {
   const { state, viewer, act } = useWorkspace();
@@ -34,7 +34,7 @@ export function Organizations() {
         ]}
         eyebrow="YOUR PLATFORM SPACE"
         title="Organizations"
-        description="Manage organizations, platform access and available features."
+        description="Review organization requests, confirm payments and manage access."
         action={
           <Button onClick={() => setForm(true)}>
             <Plus size={17} />
@@ -43,8 +43,8 @@ export function Organizations() {
         }
       />
       <Notice>
-        Platform administrators can manage organization status and features.
-        Educational records remain scoped to organization membership.
+        Organizations need approval and an active subscription. Plan and coupon
+        features are applied automatically.
       </Notice>
       {org ? (
         <div className="platform-grid">
@@ -59,8 +59,8 @@ export function Organizations() {
                 <div>
                   <strong>{o.name}</strong>
                   <small>
-                    {Object.values(o.features).filter(Boolean).length} enabled
-                    features
+                    {o.billing_status?.replaceAll("_", " ") ||
+                      "Subscription required"}
                   </small>
                 </div>
                 <span className={`status-dot ${o.active ? "" : "off"}`} />
@@ -71,41 +71,11 @@ export function Organizations() {
             <div className="section-heading">
               <h2>{org.name}</h2>
               <Badge tone={org.active ? "sage" : "peach"}>
-                {org.active ? "Active" : "Suspended"}
+                {org.billing_status?.replaceAll("_", " ") ||
+                  (org.active ? "Active" : "Suspended")}
               </Badge>
             </div>
-            <h3>Organization features</h3>
-            <p className="muted">Feature changes apply to this organization.</p>
-            {(Object.entries(featureLabels) as [Feature, string][]).map(
-              ([key, label]) => (
-                <div className="setting-row" key={key}>
-                  <span>{label}</span>
-                  <button
-                    className={`toggle ${org.features[key] ? "on" : ""}`}
-                    role="switch"
-                    aria-checked={org.features[key]}
-                    aria-label={`${label} for ${org.name}`}
-                    onClick={() =>
-                      act(
-                        {
-                          type: "feature",
-                          orgId: org.id,
-                          feature: key,
-                          enabled: !org.features[key],
-                        },
-                        `${label} changed for ${org.name} in the only.`,
-                      )
-                    }
-                  >
-                    <span />
-                  </button>
-                </div>
-              ),
-            )}
-            <p className="fine-print">
-              Disabling a feature hides its views; existing records are
-              preserved. No subscription or billing change occurs.
-            </p>
+            <OrganizationBilling key={org.id} org={org} />
             <div className="org-status-action">
               <Button
                 variant={org.active ? "secondary" : "primary"}
