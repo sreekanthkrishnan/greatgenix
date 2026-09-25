@@ -276,6 +276,7 @@ test("catalog filters public courses and keeps locked courses out of My courses"
   await page.screenshot({
     path: testInfo.outputPath("catalog-mobile.png"),
     fullPage: true,
+    animations: "disabled",
   });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("link", { name: "My courses", exact: true }).click();

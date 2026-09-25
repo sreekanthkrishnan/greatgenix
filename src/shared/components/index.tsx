@@ -225,9 +225,11 @@ export function CourseArt({
 export function CourseCard({
   course,
   detail,
+  description,
 }: {
   course: Course;
   detail: string;
+  description?: string;
 }) {
   return (
     <a className="course-card" href={`#/courses/${course.id}`}>
@@ -239,6 +241,7 @@ export function CourseCard({
         </div>
         <h3>{course.title}</h3>
         <p>{course.batch}</p>
+        {description && <p className="course-description">{description}</p>}
         <Badge tone={course.visibility === "public" ? "sage" : "peach"}>
           {course.visibility === "public"
             ? course.pricing === "paid"
