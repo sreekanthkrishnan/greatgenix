@@ -1,3 +1,5 @@
+import { CourseMetadataFields } from "../../features/courses/components/CourseMetadataFields";
+import type { Course } from "../types";
 import { CourseThumbnailField } from "../../features/courses/components/CourseThumbnailField";
 import {
   CoursePricingFields,
@@ -33,6 +35,7 @@ export function ActionForm({
   lessonId?: string;
 }) {
   const { state, viewer, act, busy, refresh } = useWorkspace();
+  const [color, setColor] = useState<Course["color"]>("sage");
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [thumbnailLoading, setThumbnailLoading] = useState(false);
   const [courseType, setCourseType] = useState<AccessKind>("private");
@@ -92,7 +95,7 @@ export function ActionForm({
               batch: value("batch"),
               description: value("description"),
               studentIds: [],
-              color: "sage",
+              color,
             },
           });
           break;
@@ -208,7 +211,7 @@ export function ActionForm({
             >
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title} · {c.batch}
+                  {[c.title, c.batch].filter(Boolean).join(" · ")}
                 </option>
               ))}
             </select>
@@ -216,21 +219,13 @@ export function ActionForm({
         )}
         {kind === "course" && (
           <>
-            <div className="form-row">
-              <Field label="Subject">
-                <input name="subject" required maxLength={40} />
-              </Field>
-              <Field label="Grade">
-                <input name="grade" required maxLength={40} />
-              </Field>
-            </div>
-            <Field label="Batch">
-              <input name="batch" required maxLength={40} />
-            </Field>
+            <CourseMetadataFields />
             <Field label="Introduction">
               <textarea name="description" required maxLength={400} />
             </Field>
             <CourseThumbnailField
+              color={color}
+              onColorChange={setColor}
               value={thumbnailUrl}
               onChange={setThumbnailUrl}
               onLoadingChange={setThumbnailLoading}

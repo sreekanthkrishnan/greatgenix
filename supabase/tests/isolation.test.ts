@@ -1065,3 +1065,17 @@ test.each(['https://example.com/image.png','data:image/svg+xml;base64,AAAA','dat
   await as(teacher);
   await denied(() => act({type:'course-access',id:course,visibility:'private',pricing:'free',thumbnailUrl}), /course_thumbnail_valid/);
 });
+
+
+test('course optional metadata and system artwork support omitted creation fields and editable clearing', async () => {
+  await as(teacher);
+  await act({type:'course',course:{id:id(96),orgId:org,title:'Optional details',description:'Learning',color:'peach'}});
+  const saved = async () => (await db.query('select subject,grade,batch,color from public.courses where id=$1',[id(96)])).rows[0];
+  expect(await saved()).toEqual({subject:'',grade:'',batch:'',color:'peach'});
+  await act({type:'course-access',id:id(96),visibility:'private',pricing:'free',subject:'Math',grade:'9',batch:'A',color:'lavender'});
+  expect(await saved()).toEqual({subject:'Math',grade:'9',batch:'A',color:'lavender'});
+  await act({type:'course-access',id:id(96),visibility:'private',pricing:'free',subject:'',grade:null,batch:' '});
+  expect(await saved()).toEqual({subject:'',grade:'',batch:'',color:'lavender'});
+  await as(student);
+  await denied(() => act({type:'course-access',id:id(96),visibility:'private',pricing:'free',color:'sage'}));
+});

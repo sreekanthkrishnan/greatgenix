@@ -1,3 +1,4 @@
+import { CourseEdit } from "../features/courses/components/CourseEdit";
 import { ExploreCourses } from "../features/courses/components/ExploreCourses";
 import { PlanManager } from "../features/billing/PlanManager";
 import { CouponManager } from "../features/billing/CouponManager";
@@ -35,6 +36,11 @@ function CourseDetailRoute() {
   return <CourseDetail id={id || ""} />;
 }
 
+function CourseEditRoute() {
+  const { id } = useParams<{ id: string }>();
+  return <CourseEdit id={id || ""} />;
+}
+
 function SessionsRoute() {
   const { id } = useParams<{ id?: string }>();
   return <Sessions id={id} />;
@@ -70,6 +76,7 @@ export function Router({ platform }: { route?: string; platform: boolean }) {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/explore" element={<ExploreCourses />} />
+          <Route path="/courses/:id/edit" element={<CourseEditRoute />} />
           <Route path="/courses/:id" element={<CourseDetailRoute />} />
           <Route path="/sessions" element={<SessionsRoute />} />
           <Route path="/sessions/:id" element={<SessionsRoute />} />

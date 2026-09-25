@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Button, CourseThumbnail, Field } from "../../../shared/components";
+import {
+  Button,
+  CourseArt,
+  CourseThumbnail,
+  Field,
+} from "../../../shared/components";
 import type { Course } from "../../../shared/types";
 import { validateImage } from "../../../shared/utils/imageUpload";
 
@@ -8,12 +13,14 @@ export function CourseThumbnailField({
   onChange,
   onLoadingChange,
   color = "sage",
+  onColorChange,
   disabled = false,
 }: {
   value: string | null;
   onChange: (value: string | null) => void;
   onLoadingChange: (loading: boolean) => void;
   color?: Course["color"];
+  onColorChange: (color: Course["color"]) => void;
   disabled?: boolean;
 }) {
   const [error, setError] = useState("");
@@ -21,6 +28,33 @@ export function CourseThumbnailField({
   return (
     <div className="course-thumbnail-editor">
       <CourseThumbnail thumbnailUrl={value} color={color} />
+      <fieldset className="thumbnail-options" disabled={disabled || loading}>
+        <legend>System thumbnails</legend>
+        <div className="thumbnail-option-grid">
+          {(
+            [
+              ["sage", "Garden"],
+              ["peach", "Orbit"],
+              ["lavender", "Library"],
+            ] as const
+          ).map(([option, label]) => (
+            <button
+              type="button"
+              key={option}
+              className="thumbnail-option"
+              aria-pressed={!value && color === option}
+              onClick={() => {
+                onColorChange(option);
+                onChange(null);
+                setError("");
+              }}
+            >
+              <CourseArt color={option} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <Field
         label="Course thumbnail (optional)"
         hint="PNG, JPEG or WebP under 200 KB. A landscape image works best. Leave empty to use the built-in artwork."

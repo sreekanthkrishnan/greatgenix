@@ -246,11 +246,9 @@ export function CourseThumbnail({
 export function CourseCard({
   course,
   detail,
-  description,
 }: {
   course: Course;
   detail: string;
-  description?: string;
 }) {
   return (
     <a className="course-card" href={`#/courses/${course.id}`}>
@@ -260,19 +258,21 @@ export function CourseCard({
       />
       <div className="course-card-body">
         <div className="course-meta">
-          <span>{course.subject}</span>
-          <span>{course.grade}</span>
+          {course.subject && <span>{course.subject}</span>}
+          <Badge tone={course.visibility === "public" ? "sage" : "peach"}>
+            {course.visibility === "public"
+              ? course.pricing === "paid"
+                ? "Paid"
+                : "Free"
+              : "Private"}
+          </Badge>
         </div>
         <h3>{course.title}</h3>
-        <p>{course.batch}</p>
-        {description && <p className="course-description">{description}</p>}
-        <Badge tone={course.visibility === "public" ? "sage" : "peach"}>
-          {course.visibility === "public"
-            ? course.pricing === "paid"
-              ? "Public · Paid"
-              : "Public · Free"
-            : "Private"}
-        </Badge>
+        {(course.grade || course.batch) && (
+          <p className="course-card-metadata">
+            {[course.grade, course.batch].filter(Boolean).join(" · ")}
+          </p>
+        )}
         {(course.pricing === "paid" || course.visibility === "public") && (
           <CoursePrice course={course} />
         )}

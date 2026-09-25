@@ -14,6 +14,10 @@ export type Action =
   | {
       type: "course-access";
       thumbnailUrl?: string | null;
+      color?: Course["color"];
+      subject?: string;
+      grade?: string;
+      batch?: string;
       id: string;
       visibility: "private" | "public";
       pricing: "free" | "paid";

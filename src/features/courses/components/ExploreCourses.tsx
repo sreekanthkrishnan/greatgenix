@@ -95,7 +95,6 @@ export function ExploreCourses() {
             <CourseCard
               key={c.id}
               course={c}
-              description={c.description}
               detail={
                 access
                   ? "Start learning"

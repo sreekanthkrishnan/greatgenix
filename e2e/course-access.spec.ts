@@ -308,7 +308,7 @@ test("access option cards save course settings and fit a narrow screen", async (
   const data = await fixture(page, "teacher");
   data.courses.push({ ...paidCourse });
   await signIn(page);
-  await page.goto(`/#/courses/${courseId}`);
+  await page.goto(`/#/courses/${courseId}/edit`);
   await expect(
     page.getByRole("radio", { name: "Public · Paid", exact: true }),
   ).toBeChecked();
@@ -318,7 +318,7 @@ test("access option cards save course settings and fit a narrow screen", async (
   });
   await page.getByRole("radio", { name: "Public · Free", exact: true }).check();
   await expect(page.getByLabel("Manual payment instructions")).toHaveCount(0);
-  await page.getByRole("button", { name: "Save access settings" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => data.courses[0].pricing).toBe("free");
   await page.reload();
   await expect(
@@ -347,25 +347,25 @@ test("teacher edits saved prices and clears a discount", async ({ page }) => {
   const data = await fixture(page, "teacher");
   data.courses.push({ ...paidCourse });
   await signIn(page);
-  await page.goto(`/#/courses/${courseId}`);
+  await page.goto(`/#/courses/${courseId}/edit`);
   const price = page.getByLabel("Course Price", { exact: true });
   const discount = page.getByLabel("Discounted Price", { exact: true });
   await expect(price).toHaveValue("5000");
   await expect(discount).toHaveValue("3999");
   await price.fill("3000");
-  await page.getByRole("button", { name: "Save access settings" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Discounted Price must be less than Course Price.",
   );
   expect(data.courses[0].coursePrice).toBe(5000);
   await discount.fill("2499.50");
-  await page.getByRole("button", { name: "Save access settings" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => data.courses[0].discountedPrice).toBe(2499.5);
   await page.reload();
   await expect(price).toHaveValue("3000");
   await expect(discount).toHaveValue("2499.5");
   await discount.fill("");
-  await page.getByRole("button", { name: "Save access settings" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => data.courses[0].discountedPrice).toBeNull();
   await page.reload();
   await expect(discount).toHaveValue("");
@@ -416,7 +416,7 @@ test("teacher replaces and removes a thumbnail and rejects invalid uploads", asy
   const data = await fixture(page, "teacher");
   data.courses.push({ ...paidCourse });
   await signIn(page);
-  await page.goto(`/#/courses/${courseId}`);
+  await page.goto(`/#/courses/${courseId}/edit`);
   const upload = page.getByLabel("Course thumbnail (optional)", {
     exact: true,
   });
@@ -443,7 +443,7 @@ test("teacher replaces and removes a thumbnail and rejects invalid uploads", asy
     "src",
     thumbnail,
   );
-  await page.getByRole("button", { name: "Save access settings" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => data.courses[0].thumbnailUrl).toBe(thumbnail);
   await page.reload();
   await expect(page.locator(".course-thumbnail-editor img")).toHaveAttribute(
@@ -460,13 +460,13 @@ test("teacher replaces and removes a thumbnail and rejects invalid uploads", asy
   await expect(
     page.locator(".course-card .course-price-values strong"),
   ).toContainText("3,999");
-  await page.goto(`/#/courses/${courseId}`);
+  await page.goto(`/#/courses/${courseId}/edit`);
   await page.getByRole("button", { name: "Remove thumbnail" }).click();
-  await page.getByRole("button", { name: "Save access settings" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => data.courses[0].thumbnailUrl).toBeNull();
   await page.reload();
   await expect(
-    page.locator(".course-thumbnail-editor .course-art"),
+    page.locator(".course-thumbnail-editor > .course-thumbnail .course-art"),
   ).toBeVisible();
 });
 
@@ -492,4 +492,125 @@ test("catalog shows prices and falls back to artwork for a broken thumbnail", as
   await expect(
     page.locator(".course-card .course-price-values strong"),
   ).toContainText("3,999");
+});
+
+test("optional metadata and built-in thumbnail choices save and edit correctly", async ({
+  page,
+}, testInfo) => {
+  const data = await fixture(page, "teacher");
+  await signIn(page);
+  await page.goto("/#/courses");
+  await page
+    .getByRole("button", { name: "Create course", exact: true })
+    .click();
+  await page.getByLabel("Title / name").fill("A fresh start");
+  await page.getByLabel("Introduction").fill("Learning for everyone");
+  await page.getByRole("button", { name: "Orbit", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Orbit", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(data.courses[0]).toMatchObject({
+    subject: "",
+    grade: "",
+    batch: "",
+    color: "peach",
+    thumbnailUrl: null,
+  });
+  await page
+    .getByRole("link")
+    .filter({ has: page.getByRole("heading", { name: "A fresh start" }) })
+    .click();
+  await page.getByRole("link", { name: "Edit course", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Orbit", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByLabel("Subject", { exact: true }).fill("Math");
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect.poll(() => data.courses[0].color).toBe("lavender");
+  await page.reload();
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue("Math");
+  await expect(
+    page.getByRole("button", { name: "Library", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByLabel("Subject", { exact: true }).fill("");
+  await page
+    .getByLabel("Course thumbnail (optional)", { exact: true })
+    .setInputFiles(thumbnailFile);
+  await expect(
+    page.getByRole("button", { name: "Remove thumbnail" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Garden", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Remove thumbnail" }),
+  ).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: testInfo.outputPath("thumbnail-options-mobile.png"),
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect.poll(() => data.courses[0].subject).toBe("");
+  expect(data.courses[0]).toMatchObject({ color: "sage", thumbnailUrl: null });
+});
+
+test("course details and editing have separate routes", async ({ page }) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push({ ...paidCourse });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  await expect(
+    page.getByRole("heading", { name: paidCourse.title, exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Course Price", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByLabel("Course thumbnail (optional)", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Delete course", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("link", { name: "Edit course", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/courses/${courseId}/edit$`));
+  await expect(
+    page.getByRole("heading", { name: "Edit course", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("tablist", { name: "Course views" })).toHaveCount(
+    0,
+  );
+  await page.getByLabel("Course Price", { exact: true }).fill("6000");
+  await page.getByRole("link", { name: "Back to course", exact: true }).click();
+  expect(data.courses[0].coursePrice).toBe(5000);
+  await page.getByRole("link", { name: "Edit course", exact: true }).click();
+  await expect(page.getByLabel("Course Price", { exact: true })).toHaveValue(
+    "5000",
+  );
+  await page.getByLabel("Course Price", { exact: true }).fill("6000");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect.poll(() => data.courses[0].coursePrice).toBe(6000);
+  await page.getByRole("link", { name: "Back to course", exact: true }).click();
+  await expect(page.locator(".course-price-values del")).toContainText("6,000");
+});
+
+test("students cannot open the course editor", async ({ page }) => {
+  const data = await fixture(page, "student");
+  data.courses.push({ ...paidCourse });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  await expect(
+    page.getByRole("link", { name: "Edit course", exact: true }),
+  ).toHaveCount(0);
+  await page.goto(`/#/courses/${courseId}/edit`);
+  await expect(
+    page.getByRole("heading", { name: "Course editing unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save changes" })).toHaveCount(
+    0,
+  );
+  await page.goto("/#/courses/missing-course/edit");
+  await expect(
+    page.getByRole("heading", { name: "Course editing unavailable" }),
+  ).toBeVisible();
 });
