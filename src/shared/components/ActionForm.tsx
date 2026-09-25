@@ -1,11 +1,14 @@
 import {
+  CoursePricingFields,
+  parseCoursePricing,
+} from "../../features/courses/components/CoursePricing";
+import {
   AccessOptions,
-  PaymentInstructions,
   type AccessKind,
 } from "../../features/courses/components/AccessOptions";
 import { useState } from "react";
 import { useWorkspace } from "../../app/providers/OrgContextProvider";
-import { canAdmin, canSeeCourse, localDate, type LessonType } from "../types";
+import { canSeeCourse, localDate, type LessonType } from "../types";
 import { Button, Field, Modal, Notice } from "./index";
 import { InviteForm } from "../../features/memberships/components/Members";
 import { createOrganization } from "../../features/organizations/api";
@@ -30,7 +33,8 @@ export function ActionForm({
 }) {
   const { state, viewer, act, busy, refresh } = useWorkspace();
   const [courseType, setCourseType] = useState<AccessKind>("private");
-  const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [coursePrice, setCoursePrice] = useState("");
+  const [discountedPrice, setDiscountedPrice] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [lessonType, setLessonType] = useState<LessonType>("video");
@@ -74,12 +78,10 @@ export function ActionForm({
             course: {
               id,
               orgId: viewer.orgId,
-              teacherId: canAdmin(viewer.role)
-                ? value("teacher")
-                : viewer.userId,
+              teacherId: viewer.userId,
               visibility: courseType === "private" ? "private" : "public",
               pricing: courseType === "paid" ? "paid" : "free",
-              paymentInstructions,
+              ...parseCoursePricing(courseType, coursePrice, discountedPrice),
               title: value("title"),
               subject: value("subject"),
               grade: value("grade"),
@@ -230,26 +232,13 @@ export function ActionForm({
               disabled={busy || saving}
             />
             {courseType === "paid" && (
-              <PaymentInstructions
-                value={paymentInstructions}
-                onChange={setPaymentInstructions}
+              <CoursePricingFields
+                coursePrice={coursePrice}
+                discountedPrice={discountedPrice}
+                onPriceChange={setCoursePrice}
+                onDiscountChange={setDiscountedPrice}
               />
             )}
-            <Field label="Assigned teacher">
-              <select
-                name="teacher"
-                defaultValue={viewer.userId}
-                disabled={!canAdmin(viewer.role)}
-              >
-                {state.members
-                  .filter((m) => m.role !== "student" && m.active !== false)
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-              </select>
-            </Field>
           </>
         )}
         {kind === "session" && (

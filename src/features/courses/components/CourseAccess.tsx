@@ -1,8 +1,9 @@
 import {
-  AccessOptions,
-  PaymentInstructions,
-  type AccessKind,
-} from "./AccessOptions";
+  CoursePricingFields,
+  CoursePricing,
+  parseCoursePricing,
+} from "./CoursePricing";
+import { AccessOptions, type AccessKind } from "./AccessOptions";
 import { useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
 import { Badge, Button, Field, Notice } from "../../../shared/components";
@@ -20,8 +21,11 @@ export function CourseAccess({
   const [kind, setKind] = useState<AccessKind>(
     course.visibility === "public" ? course.pricing || "free" : "private",
   );
-  const [instructions, setInstructions] = useState(
-    course.paymentInstructions || "",
+  const [coursePrice, setCoursePrice] = useState(
+    String(course.coursePrice ?? ""),
+  );
+  const [discountedPrice, setDiscountedPrice] = useState(
+    String(course.discountedPrice ?? ""),
   );
   const [token, setToken] = useState("");
   const [saving, setSaving] = useState(false);
@@ -38,23 +42,30 @@ export function CourseAccess({
           className="form"
           onSubmit={async (e) => {
             e.preventDefault();
-            await act(
-              {
-                type: "course-access",
-                id: course.id,
-                visibility: kind === "private" ? "private" : "public",
-                pricing: kind === "paid" ? "paid" : "free",
-                paymentInstructions: instructions,
-              },
-              "Course access updated.",
-            );
+            setError("");
+            try {
+              await act(
+                {
+                  type: "course-access",
+                  id: course.id,
+                  visibility: kind === "private" ? "private" : "public",
+                  pricing: kind === "paid" ? "paid" : "free",
+                  ...parseCoursePricing(kind, coursePrice, discountedPrice),
+                },
+                "Course access updated.",
+              );
+            } catch (e) {
+              setError((e as Error).message);
+            }
           }}
         >
           <AccessOptions value={kind} onChange={setKind} disabled={busy} />
           {kind === "paid" && (
-            <PaymentInstructions
-              value={instructions}
-              onChange={setInstructions}
+            <CoursePricingFields
+              coursePrice={coursePrice}
+              discountedPrice={discountedPrice}
+              onPriceChange={setCoursePrice}
+              onDiscountChange={setDiscountedPrice}
             />
           )}
           <Notice>
@@ -62,6 +73,11 @@ export function CourseAccess({
             courses, only lessons marked as free previews are available before
             access is granted. Existing enrolled students keep full access.
           </Notice>
+          {error && (
+            <p role="alert" className="error-text">
+              {error}
+            </p>
+          )}
           <Button disabled={busy}>Save access settings</Button>
         </form>
       </section>
@@ -78,20 +94,13 @@ export function CourseAccess({
           ? "You have full course access"
           : "Preview this course before purchasing"}
       </h3>
+      {course.pricing === "paid" && <CoursePricing course={course} />}
       {!access && (
         <>
           <p>
             Explore the free preview lessons below. Full lessons, live classes,
             and assessments unlock after your teacher confirms your manual
             payment.
-          </p>
-          <p style={{ whiteSpace: "pre-wrap" }}>
-            {course.paymentInstructions ||
-              "Contact your teacher for the price and payment instructions."}
-          </p>
-          <p>
-            After payment, your teacher can add you directly or share an access
-            coupon for your account.
           </p>
           <form
             className="form"

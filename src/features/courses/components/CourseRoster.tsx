@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
 import { Button, Field, Notice } from "../../../shared/components";
-import { canAdmin, type Course } from "../../../shared/types";
+import { type Course } from "../../../shared/types";
 import {
   accessStudents,
   accessCoupons,
@@ -11,7 +11,7 @@ import {
 } from "../api";
 
 export function CourseRoster({ course }: { course: Course }) {
-  const { state, viewer, act, busy } = useWorkspace();
+  const { viewer, act, busy } = useWorkspace();
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const [issued, setIssued] = useState<{ name: string; token: string } | null>(
@@ -46,30 +46,7 @@ export function CourseRoster({ course }: { course: Course }) {
   }
   return (
     <section className="panel report-panel">
-      <h3>Teaching assignment & enrollment</h3>
-      {canAdmin(viewer.role) && (
-        <Field label="Assigned teacher">
-          <select
-            disabled={busy || working}
-            value={course.teacherId}
-            onChange={(e) =>
-              act({
-                type: "assign-teacher",
-                courseId: course.id,
-                teacherId: e.target.value,
-              })
-            }
-          >
-            {state.members
-              .filter((m) => m.role !== "student" && m.active !== false)
-              .map((m) => (
-                <option value={m.id} key={m.id}>
-                  {m.name}
-                </option>
-              ))}
-          </select>
-        </Field>
-      )}
+      <h3>Course enrollment</h3>
       <Notice>
         {paid
           ? "Confirm the student’s manual payment before granting full access or creating a coupon. Each coupon is valid for seven days and only the selected student can redeem it once. Creating another replaces their previous coupon."

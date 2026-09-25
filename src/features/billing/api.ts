@@ -89,7 +89,4 @@ export const confirmPayment = (subscription: string, reference: string) =>
   });
 export const cancelSubscription = (subscription: string) =>
   rpc("cancel_subscription", { p_subscription: subscription });
-export const money = (minor: number, currency: string) =>
-  new Intl.NumberFormat(undefined, { style: "currency", currency }).format(
-    minor / 100,
-  );
+export { money } from "../../shared/utils/money";

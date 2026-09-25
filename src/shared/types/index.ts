@@ -37,7 +37,8 @@ export type Org = {
 export type Course = {
   visibility?: "private" | "public";
   pricing?: "free" | "paid";
-  paymentInstructions?: string;
+  coursePrice?: number | null;
+  discountedPrice?: number | null;
   id: string;
   orgId: string;
   title: string;

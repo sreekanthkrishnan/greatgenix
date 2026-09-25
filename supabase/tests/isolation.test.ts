@@ -70,7 +70,7 @@ beforeAll(async () => {
     `insert into public.memberships("orgId","userId",name,email,role) values($1,$2,'Teacher','teacher@example.com','teacher'),($1,$3,'Student','student@example.com','student'),($4,$5,'OtherStudent','otherstudent@example.com','student')`,
     [org, teacher, student, otherOrg, otherStudent],
   );
-  await as(admin);
+  await as(teacher);
   await act({
     type: "course",
     course: {
@@ -885,19 +885,24 @@ test('rejection and suspension revoke paid access while billing remains readable
 
 async function courseTerms(visibility = 'public', pricing = 'paid') {
   await as(teacher);
-  await act({type:'course-access', id:course, visibility, pricing, paymentInstructions:'Contact teacher. Pay manually.'});
+  await act({type:'course-access', id:course, visibility, pricing, coursePrice:5000, discountedPrice:null});
   await act({type:'enroll', courseId:course, studentId:student, enrolled:false});
 }
 async function publishPreview(preview = true) {
   await db.exec('reset role');
   await db.query(`update public.lessons set status='published',"mediaStatus"='ready',"isFreePreview"=$1,url='https://example.com/protected',content='Protected notes',"references"='[{"id":"private-notes","type":"notes","title":"Notes","content":"Protected reference"}]' where id=$2`,[preview,lesson]);
 }
-test('teachers create their own courses but cannot assign another teacher or create across organizations', async () => {
+test('course creation uses the authenticated teacher and rejects cross-organization creation', async () => {
   await as(teacher);
-  const data = {id:id(90),orgId:org,title:'Open course',subject:'Math',grade:'9',batch:'A',description:'Preview',color:'sage',teacherId:teacher,visibility:'public',pricing:'paid'};
+  const data = {id:id(90),orgId:org,title:'Open course',subject:'Math',grade:'9',batch:'A',description:'Preview',color:'sage',teacherId:teacher,visibility:'public',pricing:'paid',coursePrice:5000,discountedPrice:null};
   await act({type:'course',course:data});
   expect((await db.query('select visibility,pricing from public.courses where id=$1',[id(90)])).rows[0]).toEqual({visibility:'public',pricing:'paid'});
-  await denied(() => act({type:'course',course:{...data,id:id(91),teacherId:admin}}));
+  await act({type:'course',course:{...data,id:id(91),teacherId:admin}});
+  expect((await db.query('select "teacherId" from public.courses where id=$1',[id(91)])).rows[0].teacherId).toBe(teacher);
+  await as(admin);
+  await act({type:'course',course:{...data,id:id(92),teacherId:teacher}});
+  expect((await db.query('select "teacherId" from public.courses where id=$1',[id(92)])).rows[0].teacherId).toBe(admin);
+  await as(teacher);
   await denied(() => act({type:'course',course:{...data,id:id(91),orgId:otherOrg}},otherOrg));
   await as(student);
   await denied(() => act({type:'course',course:{...data,id:id(91),teacherId:student}}));
@@ -994,7 +999,7 @@ test.each(['expired','revoked','replaced','inactive','changed-terms'])('course c
   if (condition==='replaced') await rpc('create_course_access_coupon',[org,course,student]);
   if (condition==='changed-terms') {
     await act({type:'course-access',id:course,visibility:'private',pricing:'free'});
-    await act({type:'course-access',id:course,visibility:'public',pricing:'paid'});
+    await act({type:'course-access',id:course,visibility:'public',pricing:'paid',coursePrice:5000,discountedPrice:null});
   }
   if (condition==='expired' || condition==='inactive') {
     await db.exec('reset role');
@@ -1015,4 +1020,25 @@ test('coupon issuance and student directory reject outsiders and invalid recipie
   await as(student);
   await denied(() => rpc('course_access_students',[org,course]));
   await denied(() => rpc('create_course_access_coupon',[org,course,student]));
+});
+
+
+test('course pricing persists numeric amounts and clears optional discounts', async () => {
+  await courseTerms();
+  await act({type:'course-access',id:course,visibility:'public',pricing:'paid',coursePrice:5000,discountedPrice:3999.5});
+  const prices = async () => (await db.query('select "coursePrice","discountedPrice" from public.courses where id=$1',[course])).rows[0];
+  expect(await prices()).toEqual({coursePrice:'5000',discountedPrice:'3999.5'});
+  await act({type:'course-access',id:course,visibility:'public',pricing:'paid',coursePrice:5000,discountedPrice:null});
+  expect(await prices()).toEqual({coursePrice:'5000',discountedPrice:null});
+});
+
+test.each([
+  {}, {coursePrice:null}, {coursePrice:0}, {coursePrice:-1},
+  {coursePrice:5000,discountedPrice:0}, {coursePrice:5000,discountedPrice:-1},
+  {coursePrice:5000,discountedPrice:5000}, {coursePrice:5000,discountedPrice:6000},
+])('paid course creation and editing reject invalid pricing %j', async (prices) => {
+  await as(teacher);
+  await denied(() => act({type:'course-access',id:course,visibility:'public',pricing:'paid',...prices}), /Price/);
+  await denied(() => act({type:'course',course:{id:id(95),orgId:org,title:'Invalid pricing',subject:'Math',grade:'9',batch:'A',description:'Test',color:'sage',visibility:'public',pricing:'paid',...prices}}), /Price/);
+  expect((await db.query('select id from public.courses where id=$1',[id(95)])).rows).toEqual([]);
 });

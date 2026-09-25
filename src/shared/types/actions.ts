@@ -16,7 +16,8 @@ export type Action =
       id: string;
       visibility: "private" | "public";
       pricing: "free" | "paid";
-      paymentInstructions: string;
+      coursePrice: number | null;
+      discountedPrice: number | null;
     }
   | { type: "lesson-preview"; id: string; isFreePreview: boolean }
   | { type: "session"; session: Session }

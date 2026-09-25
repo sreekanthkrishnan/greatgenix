@@ -14,7 +14,8 @@ const paidCourse = {
   color: "sage",
   visibility: "public",
   pricing: "paid",
-  paymentInstructions: "Pay 500 to your teacher and share your receipt.",
+  coursePrice: 5000,
+  discountedPrice: 3999,
 };
 const lesson = {
   id: "00000000-0000-4000-8000-000000000030",
@@ -44,15 +45,33 @@ test("teacher creates a paid public course and marks a lesson as a free preview"
   await page.getByLabel("Grade", { exact: true }).fill("9");
   await page.getByLabel("Batch", { exact: true }).fill("A");
   await page.getByLabel("Introduction").fill("Learn algebra");
+  await expect(page.getByLabel("Assigned teacher")).toHaveCount(0);
   await page.getByRole("radio", { name: "Public · Paid", exact: true }).check();
-  await page
-    .getByLabel("Manual payment instructions")
-    .fill("Pay 500 to your teacher.");
+  await expect(page.getByLabel("Manual payment instructions")).toHaveCount(0);
+  for (const invalid of ["", "0", "-1"]) {
+    await page.getByLabel("Course Price", { exact: true }).fill(invalid);
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    expect(data.courses).toHaveLength(0);
+    expect(
+      await page
+        .getByLabel("Course Price", { exact: true })
+        .evaluate((input: HTMLInputElement) => input.checkValidity()),
+    ).toBe(false);
+  }
+  await page.getByLabel("Course Price", { exact: true }).fill("5000");
+  await page.getByLabel("Discounted Price", { exact: true }).fill("5000");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Discounted Price must be less than Course Price.",
+  );
+  await page.getByLabel("Discounted Price", { exact: true }).fill("3999");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(data.courses[0]).toMatchObject({
     visibility: "public",
     pricing: "paid",
+    coursePrice: 5000,
+    discountedPrice: 3999,
     teacherId: uid,
   });
   await page
@@ -105,9 +124,13 @@ test("student sees previews, handles coupon errors, and unlocks full course acce
       name: "Preview this course before purchasing",
     }),
   ).toBeVisible();
-  await expect(
-    page.getByText(paidCourse.paymentInstructions, { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".notice")).toContainText(
+    "Please contact your teacher to complete the payment and receive your access coupon.",
+  );
+  await expect(page.locator(".course-price-values del")).toContainText("5,000");
+  await expect(page.locator(".course-price-values strong")).toContainText(
+    "3,999",
+  );
   await expect(page.getByRole("link", { name: /First look/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Paid lesson/ })).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "Class schedule" })).toHaveCount(
@@ -288,7 +311,10 @@ test("access option cards save course settings and fit a narrow screen", async (
   ).toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("radio", { name: "Public · Paid", exact: true }).check();
-  await expect(page.getByLabel("Manual payment instructions")).toBeVisible();
+  await expect(page.getByLabel("Course Price", { exact: true })).toBeVisible();
+  await expect(
+    page.getByLabel("Discounted Price", { exact: true }),
+  ).toBeVisible();
   await expect
     .poll(() =>
       page.evaluate(
@@ -301,3 +327,70 @@ test("access option cards save course settings and fit a narrow screen", async (
     fullPage: true,
   });
 });
+
+test("teacher edits saved prices and clears a discount", async ({ page }) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push({ ...paidCourse });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  const price = page.getByLabel("Course Price", { exact: true });
+  const discount = page.getByLabel("Discounted Price", { exact: true });
+  await expect(price).toHaveValue("5000");
+  await expect(discount).toHaveValue("3999");
+  await price.fill("3000");
+  await page.getByRole("button", { name: "Save access settings" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Discounted Price must be less than Course Price.",
+  );
+  expect(data.courses[0].coursePrice).toBe(5000);
+  await discount.fill("2499.50");
+  await page.getByRole("button", { name: "Save access settings" }).click();
+  await expect.poll(() => data.courses[0].discountedPrice).toBe(2499.5);
+  await page.reload();
+  await expect(price).toHaveValue("3000");
+  await expect(discount).toHaveValue("2499.5");
+  await discount.fill("");
+  await page.getByRole("button", { name: "Save access settings" }).click();
+  await expect.poll(() => data.courses[0].discountedPrice).toBeNull();
+  await page.reload();
+  await expect(discount).toHaveValue("");
+});
+
+for (const [name, price, discount] of [
+  ["no discount", 5000, null],
+  ["invalid discount", 5000, 6000],
+  ["missing price", null, null],
+  ["invalid price", -1, 10],
+] as const) {
+  test(`student pricing handles ${name} on mobile`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const data = await fixture(page, "student");
+    data.courses.push({
+      ...paidCourse,
+      coursePrice: price,
+      discountedPrice: discount,
+    });
+    await signIn(page);
+    await page.goto(`/#/courses/${courseId}`);
+    await expect(
+      page.getByText("Payment Information", { exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".course-price-values del")).toHaveCount(0);
+    if (price != null && price > 0)
+      await expect(page.locator(".course-price-values strong")).toContainText(
+        "5,000",
+      );
+    else
+      await expect(
+        page.getByText("Contact your teacher for the course price.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+    await expect(page.getByLabel("Your course access coupon")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  });
+}

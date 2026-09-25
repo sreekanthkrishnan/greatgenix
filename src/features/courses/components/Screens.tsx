@@ -487,7 +487,7 @@ export function CourseDetail({ id }: { id: string }) {
         }
       />
       <CourseAccess
-        key={`${course.id}-${course.visibility}-${course.pricing}-${course.paymentInstructions}`}
+        key={`${course.id}-${course.visibility}-${course.pricing}-${course.coursePrice}-${course.discountedPrice}`}
         course={course}
         editable={canDelete}
       />

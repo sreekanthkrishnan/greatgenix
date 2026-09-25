@@ -3182,14 +3182,6 @@ button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { backg
 .access-description { font-size: 12px; line-height: 1.6; color: var(--muted); }
 .access-section-heading { margin-bottom: 24px; }
 .access-section-heading h3 { margin: 7px 0 0; }
-.payment-instructions { background: color-mix(in srgb, var(--sage) 18%, var(--paper)); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
-.payment-heading { display: flex; gap: 11px; align-items: center; margin-bottom: 14px; }
-.payment-heading label { font-size: 14px; font-weight: 650; }
-.payment-heading p { font-size: 12px; margin: 4px 0 0; color: var(--muted); }
-.payment-tag { margin-left: auto; font-size: 10px; color: var(--muted); }
-.payment-instructions textarea { width: 100%; resize: vertical; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 13px; color: var(--ink); font: inherit; font-size: 13px; line-height: 1.7; }
-.payment-hint { display: flex; justify-content: space-between; gap: 18px; margin-top: 9px; font-size: 11px; color: var(--muted); line-height: 1.5; }
-.payment-hint > :last-child { white-space: nowrap; }
 .catalog-heading { display: flex; justify-content: space-between; align-items: center; padding: 28px 32px; background: var(--sage); border-radius: 16px; margin-bottom: 30px; gap: 24px; color: #283a30; }
 .catalog-heading .eyebrow { display: flex; align-items: center; gap: 7px; }
 .catalog-heading h1 { font-size: 32px; letter-spacing: -1px; margin: 12px 0 9px; }
@@ -3223,4 +3215,8 @@ button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { backg
 .catalog-cta.filled { background: var(--green); color: white; }
 @media(min-width:1400px) { .catalog-grid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
 @media(max-width:1050px) { .catalog-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .catalog-toolbar { flex-wrap: wrap; } }
-@media(max-width:650px) { .access-option-grid { grid-template-columns: 1fr; } .access-option { padding: 14px; } .access-option-top { margin-bottom: 8px; } .access-subtitle { margin-bottom: 6px; } .catalog-grid { grid-template-columns: 1fr; } .catalog-heading { padding: 24px; } .catalog-heading h1 { font-size: 28px; } .catalog-emblem { display: none; } .catalog-toolbar .search-field { width: 100%; } .payment-tag { display: none; } .payment-hint { flex-wrap: wrap; gap: 4px; } }
+@media(max-width:650px) { .course-pricing-fields { flex-direction: column; } .access-option-grid { grid-template-columns: 1fr; } .access-option { padding: 14px; } .access-option-top { margin-bottom: 8px; } .access-subtitle { margin-bottom: 6px; } .catalog-grid { grid-template-columns: 1fr; } .catalog-heading { padding: 24px; } .catalog-heading h1 { font-size: 28px; } .catalog-emblem { display: none; } .catalog-toolbar .search-field { width: 100%; } }
+
+.course-price-values { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+.course-price-values del { color: var(--muted); }
+.course-price-values strong { font-size: 1.5rem; }
