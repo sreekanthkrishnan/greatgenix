@@ -1,6 +1,6 @@
 import { Field, Notice } from "../../../shared/components";
 import type { Course } from "../../../shared/types";
-import { money } from "../../../shared/utils/money";
+import { CoursePrice } from "../../../shared/components/CoursePrice";
 import type { AccessKind } from "./AccessOptions";
 
 export function parseCoursePricing(
@@ -68,33 +68,10 @@ export function CoursePricingFields({
 }
 
 export function CoursePricing({ course }: { course: Course }) {
-  const { coursePrice, discountedPrice } = course;
-  const validPrice =
-    coursePrice != null && Number.isFinite(coursePrice) && coursePrice > 0;
-  const hasDiscount =
-    validPrice &&
-    discountedPrice != null &&
-    Number.isFinite(discountedPrice) &&
-    discountedPrice > 0 &&
-    discountedPrice < coursePrice;
   return (
     <>
       <h4>Course Price</h4>
-      <p className="course-price-values">
-        {validPrice ? (
-          <>
-            {hasDiscount && <del>{money(coursePrice * 100, "INR")}</del>}
-            <strong>
-              {money(
-                (hasDiscount ? discountedPrice : coursePrice) * 100,
-                "INR",
-              )}
-            </strong>
-          </>
-        ) : (
-          "Contact your teacher for the course price."
-        )}
-      </p>
+      <CoursePrice course={course} />
       <Notice>
         <strong>Payment Information</strong>
         <br />

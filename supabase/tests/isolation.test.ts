@@ -1042,3 +1042,26 @@ test.each([
   await denied(() => act({type:'course',course:{id:id(95),orgId:org,title:'Invalid pricing',subject:'Math',grade:'9',batch:'A',description:'Test',color:'sage',visibility:'public',pricing:'paid',...prices}}), /Price/);
   expect((await db.query('select id from public.courses where id=$1',[id(95)])).rows).toEqual([]);
 });
+
+
+test('course thumbnails persist, survive omitted updates, and can be removed', async () => {
+  await as(teacher);
+  const image = 'data:image/png;base64,AAAA';
+  const data = {id:id(95),orgId:org,title:'Cover image',subject:'Math',grade:'9',batch:'A',description:'Test',color:'sage',visibility:'public',pricing:'paid',coursePrice:5000,thumbnailUrl:image};
+  await act({type:'course',course:data});
+  const saved = async () => (await db.query('select "thumbnailUrl" from public.courses where id=$1',[id(95)])).rows[0].thumbnailUrl;
+  expect(await saved()).toBe(image);
+  await act({type:'course-access',id:id(95),visibility:'public',pricing:'paid',coursePrice:4000});
+  expect(await saved()).toBe(image);
+  await as(student);
+  await denied(() => act({type:'course-access',id:id(95),visibility:'public',pricing:'paid',coursePrice:4000,thumbnailUrl:null}));
+  await as(teacher);
+  expect(await saved()).toBe(image);
+  await act({type:'course-access',id:id(95),visibility:'public',pricing:'paid',coursePrice:4000,thumbnailUrl:null});
+  expect(await saved()).toBeNull();
+});
+
+test.each(['https://example.com/image.png','data:image/svg+xml;base64,AAAA','data:image/png;base64,' + 'A'.repeat(270000)])('course thumbnails reject unsupported or oversized content %#', async (thumbnailUrl) => {
+  await as(teacher);
+  await denied(() => act({type:'course-access',id:course,visibility:'private',pricing:'free',thumbnailUrl}), /course_thumbnail_valid/);
+});

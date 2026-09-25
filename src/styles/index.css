@@ -3184,16 +3184,26 @@ button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { backg
 .access-section-heading h3 { margin: 7px 0 0; }
 .explore-toolbar { flex-wrap: wrap; }
 .explore-filters { display: flex; flex-wrap: wrap; gap: 8px; }
-.course-catalog .course-card { display: flex; flex-direction: column; min-width: 0; }
-.course-catalog .course-art { flex-shrink: 0; }
-.course-catalog .course-card-body { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
-.course-catalog .course-meta { align-self: stretch; }
 .course-catalog .course-card h3 { overflow-wrap: anywhere; }
 .course-catalog .course-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.course-catalog .course-foot { align-self: stretch; margin-top: auto; gap: 8px; }
-.course-catalog .circle-arrow { flex-shrink: 0; }
 @media(max-width:650px) { .course-pricing-fields { flex-direction: column; } .access-option-grid { grid-template-columns: 1fr; } .access-option { padding: 14px; } .access-option-top { margin-bottom: 8px; } .access-subtitle { margin-bottom: 6px; } .course-catalog .course-grid { grid-template-columns: 1fr; } }
 
 .course-price-values { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
 .course-price-values del { color: var(--muted); }
 .course-price-values strong { font-size: 1.5rem; }
+
+/* Course covers and prices share the same layout throughout the workspace. */
+.course-thumbnail { aspect-ratio: 16 / 10; overflow: hidden; background: var(--sage); flex-shrink: 0; }
+.course-thumbnail > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.course-thumbnail > .course-art { height: 100%; }
+.course-card { display: flex; flex-direction: column; min-width: 0; }
+.course-card .course-card-body { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
+.course-card .course-meta { align-self: stretch; }
+.course-card .course-price-values { margin: auto 0 16px; padding-top: 16px; color: var(--ink); }
+.course-card .course-price-values strong { font-size: 1.125rem; color: var(--green); }
+.course-card .course-price-values del { font-size: .8125rem; }
+.course-card .course-foot { align-self: stretch; gap: 8px; margin-top: auto; }
+.course-card .circle-arrow { flex-shrink: 0; }
+.course-thumbnail-editor { display: grid; gap: 12px; }
+.course-thumbnail-editor > .course-thumbnail { width: min(100%, 320px); border-radius: 11px; border: 1px solid var(--line); }
+.course-thumbnail-editor > .button { justify-self: start; }

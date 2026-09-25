@@ -1,3 +1,4 @@
+import { CourseThumbnailField } from "../../features/courses/components/CourseThumbnailField";
 import {
   CoursePricingFields,
   parseCoursePricing,
@@ -32,6 +33,8 @@ export function ActionForm({
   lessonId?: string;
 }) {
   const { state, viewer, act, busy, refresh } = useWorkspace();
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [thumbnailLoading, setThumbnailLoading] = useState(false);
   const [courseType, setCourseType] = useState<AccessKind>("private");
   const [coursePrice, setCoursePrice] = useState("");
   const [discountedPrice, setDiscountedPrice] = useState("");
@@ -79,6 +82,7 @@ export function ActionForm({
               id,
               orgId: viewer.orgId,
               teacherId: viewer.userId,
+              thumbnailUrl,
               visibility: courseType === "private" ? "private" : "public",
               pricing: courseType === "paid" ? "paid" : "free",
               ...parseCoursePricing(courseType, coursePrice, discountedPrice),
@@ -226,6 +230,12 @@ export function ActionForm({
             <Field label="Introduction">
               <textarea name="description" required maxLength={400} />
             </Field>
+            <CourseThumbnailField
+              value={thumbnailUrl}
+              onChange={setThumbnailUrl}
+              onLoadingChange={setThumbnailLoading}
+              disabled={busy || saving}
+            />
             <AccessOptions
               value={courseType}
               onChange={setCourseType}
@@ -433,7 +443,7 @@ export function ActionForm({
           <Button type="button" variant="secondary" onClick={close}>
             Cancel
           </Button>
-          <Button disabled={busy || saving}>
+          <Button disabled={busy || saving || thumbnailLoading}>
             {busy || saving ? "Saving…" : "Save"}
           </Button>
         </div>

@@ -1,9 +1,10 @@
+import { CoursePrice } from "./CoursePrice";
 import {
   HeaderArtwork,
   headerIcons,
   type HeaderSection,
 } from "./HeaderArtwork";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
   BookOpen,
@@ -222,6 +223,26 @@ export function CourseArt({
     </div>
   );
 }
+export function CourseThumbnail({
+  thumbnailUrl,
+  color,
+}: Pick<Course, "thumbnailUrl" | "color">) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  return (
+    <div className="course-thumbnail">
+      {thumbnailUrl && thumbnailUrl !== failedUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          loading="lazy"
+          onError={() => setFailedUrl(thumbnailUrl)}
+        />
+      ) : (
+        <CourseArt color={color} />
+      )}
+    </div>
+  );
+}
 export function CourseCard({
   course,
   detail,
@@ -233,7 +254,10 @@ export function CourseCard({
 }) {
   return (
     <a className="course-card" href={`#/courses/${course.id}`}>
-      <CourseArt color={course.color} />
+      <CourseThumbnail
+        thumbnailUrl={course.thumbnailUrl}
+        color={course.color}
+      />
       <div className="course-card-body">
         <div className="course-meta">
           <span>{course.subject}</span>
@@ -249,6 +273,9 @@ export function CourseCard({
               : "Public · Free"
             : "Private"}
         </Badge>
+        {(course.pricing === "paid" || course.visibility === "public") && (
+          <CoursePrice course={course} />
+        )}
         <div className="course-foot">
           <span>{detail}</span>
           <span className="circle-arrow">

@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { fixture, signIn, uid, orgId } from "./workspace-fixture";
+const thumbnail =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=";
+const thumbnailFile = {
+  name: "cover.png",
+  mimeType: "image/png",
+  buffer: Buffer.from(thumbnail.split(",")[1], "base64"),
+};
 const courseId = "00000000-0000-4000-8000-000000000020";
 const studentId = "00000000-0000-4000-8000-000000000003";
 const paidCourse = {
@@ -45,6 +52,12 @@ test("teacher creates a paid public course and marks a lesson as a free preview"
   await page.getByLabel("Grade", { exact: true }).fill("9");
   await page.getByLabel("Batch", { exact: true }).fill("A");
   await page.getByLabel("Introduction").fill("Learn algebra");
+  await page
+    .getByLabel("Course thumbnail (optional)", { exact: true })
+    .setInputFiles(thumbnailFile);
+  await expect(
+    page.getByRole("button", { name: "Remove thumbnail" }),
+  ).toBeVisible();
   await expect(page.getByLabel("Assigned teacher")).toHaveCount(0);
   await page.getByRole("radio", { name: "Public · Paid", exact: true }).check();
   await expect(page.getByLabel("Manual payment instructions")).toHaveCount(0);
@@ -72,6 +85,7 @@ test("teacher creates a paid public course and marks a lesson as a free preview"
     pricing: "paid",
     coursePrice: 5000,
     discountedPrice: 3999,
+    thumbnailUrl: thumbnail,
     teacherId: uid,
   });
   await page
@@ -395,3 +409,87 @@ for (const [name, price, discount] of [
     ).toBe(true);
   });
 }
+
+test("teacher replaces and removes a thumbnail and rejects invalid uploads", async ({
+  page,
+}) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push({ ...paidCourse });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  const upload = page.getByLabel("Course thumbnail (optional)", {
+    exact: true,
+  });
+  await upload.setInputFiles({
+    name: "bad.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from("<svg />"),
+  });
+  await expect(page.getByRole("alert")).toContainText("PNG, JPEG or WebP");
+  await upload.setInputFiles({
+    name: "large.png",
+    mimeType: "image/png",
+    buffer: Buffer.alloc(200001),
+  });
+  await expect(page.getByRole("alert")).toContainText("under 200 KB");
+  await upload.setInputFiles({
+    name: "broken.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("broken image"),
+  });
+  await expect(page.getByRole("alert")).toContainText("not a valid image");
+  await upload.setInputFiles(thumbnailFile);
+  await expect(page.locator(".course-thumbnail-editor img")).toHaveAttribute(
+    "src",
+    thumbnail,
+  );
+  await page.getByRole("button", { name: "Save access settings" }).click();
+  await expect.poll(() => data.courses[0].thumbnailUrl).toBe(thumbnail);
+  await page.reload();
+  await expect(page.locator(".course-thumbnail-editor img")).toHaveAttribute(
+    "src",
+    thumbnail,
+  );
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
+  await expect(
+    page.locator(".course-card .course-thumbnail img"),
+  ).toHaveAttribute("src", thumbnail);
+  await expect(
+    page.locator(".course-card .course-price-values del"),
+  ).toContainText("5,000");
+  await expect(
+    page.locator(".course-card .course-price-values strong"),
+  ).toContainText("3,999");
+  await page.goto(`/#/courses/${courseId}`);
+  await page.getByRole("button", { name: "Remove thumbnail" }).click();
+  await page.getByRole("button", { name: "Save access settings" }).click();
+  await expect.poll(() => data.courses[0].thumbnailUrl).toBeNull();
+  await page.reload();
+  await expect(
+    page.locator(".course-thumbnail-editor .course-art"),
+  ).toBeVisible();
+});
+
+test("catalog shows prices and falls back to artwork for a broken thumbnail", async ({
+  page,
+}) => {
+  const data = await fixture(page, "student");
+  data.courses.push({
+    ...paidCourse,
+    thumbnailUrl: "data:image/png;base64,AAAA",
+  });
+  await signIn(page);
+  await page.goto("/#/explore");
+  await expect(
+    page.locator(".course-card .course-thumbnail .course-art"),
+  ).toBeVisible();
+  await expect(page.locator(".course-card .course-thumbnail img")).toHaveCount(
+    0,
+  );
+  await expect(
+    page.locator(".course-card .course-price-values del"),
+  ).toContainText("5,000");
+  await expect(
+    page.locator(".course-card .course-price-values strong"),
+  ).toContainText("3,999");
+});

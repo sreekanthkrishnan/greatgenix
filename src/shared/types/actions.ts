@@ -13,6 +13,7 @@ export type Action =
   | { type: "course"; course: Course }
   | {
       type: "course-access";
+      thumbnailUrl?: string | null;
       id: string;
       visibility: "private" | "public";
       pricing: "free" | "paid";

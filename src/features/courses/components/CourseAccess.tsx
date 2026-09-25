@@ -1,10 +1,11 @@
+import { CourseThumbnailField } from "./CourseThumbnailField";
 import {
   CoursePricingFields,
   CoursePricing,
   parseCoursePricing,
 } from "./CoursePricing";
 import { AccessOptions, type AccessKind } from "./AccessOptions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
 import { Badge, Button, Field, Notice } from "../../../shared/components";
 import { hasCourseAccess, type Course } from "../../../shared/types";
@@ -18,6 +19,8 @@ export function CourseAccess({
   editable: boolean;
 }) {
   const { viewer, act, busy, refresh, notify } = useWorkspace();
+  const [thumbnailUrl, setThumbnailUrl] = useState(course.thumbnailUrl ?? null);
+  const [thumbnailLoading, setThumbnailLoading] = useState(false);
   const [kind, setKind] = useState<AccessKind>(
     course.visibility === "public" ? course.pricing || "free" : "private",
   );
@@ -30,6 +33,10 @@ export function CourseAccess({
   const [token, setToken] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  useEffect(
+    () => setThumbnailUrl(course.thumbnailUrl ?? null),
+    [course.thumbnailUrl],
+  );
   const access = hasCourseAccess(course, viewer);
   if (editable)
     return (
@@ -48,6 +55,7 @@ export function CourseAccess({
                 {
                   type: "course-access",
                   id: course.id,
+                  thumbnailUrl,
                   visibility: kind === "private" ? "private" : "public",
                   pricing: kind === "paid" ? "paid" : "free",
                   ...parseCoursePricing(kind, coursePrice, discountedPrice),
@@ -59,6 +67,13 @@ export function CourseAccess({
             }
           }}
         >
+          <CourseThumbnailField
+            value={thumbnailUrl}
+            color={course.color}
+            onChange={setThumbnailUrl}
+            onLoadingChange={setThumbnailLoading}
+            disabled={busy}
+          />
           <AccessOptions value={kind} onChange={setKind} disabled={busy} />
           {kind === "paid" && (
             <CoursePricingFields
@@ -78,7 +93,9 @@ export function CourseAccess({
               {error}
             </p>
           )}
-          <Button disabled={busy}>Save access settings</Button>
+          <Button disabled={busy || thumbnailLoading}>
+            Save access settings
+          </Button>
         </form>
       </section>
     );

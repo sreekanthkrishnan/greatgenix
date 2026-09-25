@@ -35,6 +35,7 @@ export type Org = {
   features: Record<Feature, boolean>;
 };
 export type Course = {
+  thumbnailUrl?: string | null;
   visibility?: "private" | "public";
   pricing?: "free" | "paid";
   coursePrice?: number | null;
