@@ -35,6 +35,9 @@ export type Org = {
   features: Record<Feature, boolean>;
 };
 export type Course = {
+  visibility?: "private" | "public";
+  pricing?: "free" | "paid";
+  paymentInstructions?: string;
   id: string;
   orgId: string;
   title: string;
@@ -65,6 +68,7 @@ export type LessonReference = {
   fileName?: string;
 };
 export type Lesson = {
+  isFreePreview?: boolean;
   id: string;
   orgId: string;
   courseId: string;
@@ -138,8 +142,17 @@ export function canSeeCourse(course: Course, viewer: Viewer) {
   if (course.orgId !== viewer.orgId || viewer.role === "super-admin")
     return false;
   return viewer.role === "student"
-    ? course.studentIds.includes(viewer.userId)
+    ? course.visibility === "public" ||
+        course.studentIds.includes(viewer.userId)
     : canAdmin(viewer.role) || course.teacherId === viewer.userId;
+}
+export function hasCourseAccess(course: Course, viewer: Viewer) {
+  return (
+    canSeeCourse(course, viewer) &&
+    (viewer.role !== "student" ||
+      course.studentIds.includes(viewer.userId) ||
+      (course.visibility === "public" && course.pricing !== "paid"))
+  );
 }
 export function available(
   state: WorkspaceState,
@@ -157,7 +170,10 @@ export function visibleLessons(state: WorkspaceState, viewer: Viewer) {
     (l) =>
       state.courses.some(
         (c) =>
-          c.id === l.courseId && c.orgId === l.orgId && canSeeCourse(c, viewer),
+          c.id === l.courseId &&
+          c.orgId === l.orgId &&
+          canSeeCourse(c, viewer) &&
+          (hasCourseAccess(c, viewer) || l.isFreePreview === true),
       ) &&
       (viewer.role !== "student" || l.status === "published"),
   );

@@ -882,3 +882,137 @@ test('rejection and suspension revoke paid access while billing remains readable
   await as(admin);
   expect((await accessOrg()).accessible).toBe(false);
 });
+
+async function courseTerms(visibility = 'public', pricing = 'paid') {
+  await as(teacher);
+  await act({type:'course-access', id:course, visibility, pricing, paymentInstructions:'Contact teacher. Pay manually.'});
+  await act({type:'enroll', courseId:course, studentId:student, enrolled:false});
+}
+async function publishPreview(preview = true) {
+  await db.exec('reset role');
+  await db.query(`update public.lessons set status='published',"mediaStatus"='ready',"isFreePreview"=$1,url='https://example.com/protected',content='Protected notes',"references"='[{"id":"private-notes","type":"notes","title":"Notes","content":"Protected reference"}]' where id=$2`,[preview,lesson]);
+}
+test('teachers create their own courses but cannot assign another teacher or create across organizations', async () => {
+  await as(teacher);
+  const data = {id:id(90),orgId:org,title:'Open course',subject:'Math',grade:'9',batch:'A',description:'Preview',color:'sage',teacherId:teacher,visibility:'public',pricing:'paid'};
+  await act({type:'course',course:data});
+  expect((await db.query('select visibility,pricing from public.courses where id=$1',[id(90)])).rows[0]).toEqual({visibility:'public',pricing:'paid'});
+  await denied(() => act({type:'course',course:{...data,id:id(91),teacherId:admin}}));
+  await denied(() => act({type:'course',course:{...data,id:id(91),orgId:otherOrg}},otherOrg));
+  await as(student);
+  await denied(() => act({type:'course',course:{...data,id:id(91),teacherId:student}}));
+});
+test.each(['free','paid'])('public %s courses are discoverable only by active organization students', async (pricing) => {
+  await courseTerms('public',pricing);
+  await as(student);
+  expect((await db.query('select id from public.courses')).rows).toEqual([{id:course}]);
+  await as(otherStudent);
+  expect((await db.query('select id from public.courses where id=$1',[course])).rows).toEqual([]);
+  await db.exec('reset role');
+  await db.query('update public.memberships set active=false where "orgId"=$1 and "userId"=$2',[org,student]);
+  await as(student);
+  expect((await db.query('select id from public.courses')).rows).toEqual([]);
+});
+test('public free courses allow all published lessons, assessments, and live access without enrollment', async () => {
+  await courseTerms('public','free'); await publishPreview(false); await as(student);
+  expect((await db.query('select id from public.lessons')).rows).toEqual([{id:lesson}]);
+  expect((await db.query('select id from public.assignments')).rows).toEqual([{id:assignment}]);
+  expect((await db.query('select id from public.sessions')).rows).toEqual([{id:session}]);
+  await rpc('media_access',[lesson,'playback']);
+  await rpc('media_access',[session,'join']);
+  await act({type:'complete',id:lesson});
+});
+test('paid previews expose only published preview content and cannot bypass full access by ID', async () => {
+  await courseTerms(); await publishPreview(false); await as(student);
+  expect((await db.query('select * from public.lessons')).rows).toEqual([]);
+  expect((await db.query('select * from public.sessions')).rows).toEqual([]);
+  expect((await db.query('select * from public.assignments')).rows).toEqual([]);
+  await denied(() => rpc('media_access',[lesson,'playback']));
+  await denied(() => rpc('media_access',[session,'join']));
+  await denied(() => act({type:'complete',id:lesson}));
+  await denied(() => act({type:'submit',id:assignment,answer:'Bypass'}));
+  await denied(() => act({type:'report',lessonId:lesson,reason:'Bypass'}));
+  await as(teacher); await act({type:'lesson-preview',id:lesson,isFreePreview:true});
+  await as(student);
+  expect((await db.query('select id,"references" from public.lessons')).rows[0]).toMatchObject({id:lesson,references:[{id:'private-notes'}]});
+  await rpc('media_access',[lesson,'playback']);
+  await act({type:'complete',id:lesson});
+  await act({type:'report',lessonId:lesson,reason:'Preview feedback'});
+  await denied(() => act({type:'lesson-preview',id:lesson,isFreePreview:false}));
+  await as(teacher); await act({type:'lesson-status',id:lesson,status:'draft',reviewed:false});
+  await as(student);
+  expect((await db.query('select * from public.lessons')).rows).toEqual([]);
+  await denied(() => rpc('media_access',[lesson,'playback']));
+});
+test('private course previews remain private and teacher invitations remain student-only', async () => {
+  await courseTerms('private','free'); await publishPreview(); await as(student);
+  expect((await db.query('select id from public.courses')).rows).toEqual([]);
+  expect((await db.query('select id from public.lessons')).rows).toEqual([]);
+  await denied(() => rpc('media_access',[lesson,'playback']));
+  await as(teacher);
+  const token = (await rpc('create_invitation',[org,'invitee@example.com','Invitee','student',course])).rows[0].result;
+  await denied(() => rpc('create_invitation',[org,'invitee@example.com','Invitee','teacher-admin',course]));
+  await denied(() => rpc('create_invitation',[otherOrg,'invitee@example.com','Invitee','student',otherCourse]));
+  await as(invitee); await rpc('accept_invitation',[token]);
+  expect((await db.query('select id from public.lessons')).rows).toEqual([{id:lesson}]);
+});
+test('manual direct grants unlock paid content and removal revokes access and outstanding coupons', async () => {
+  await courseTerms(); await publishPreview(false); await as(teacher);
+  const token = (await rpc('create_course_access_coupon',[org,course,student])).rows[0].result;
+  await act({type:'enroll',courseId:course,studentId:student,enrolled:true});
+  await as(student);
+  expect((await db.query('select id from public.lessons')).rows).toEqual([{id:lesson}]);
+  await rpc('media_access',[session,'join']);
+  await denied(() => act({type:'enroll',courseId:course,studentId:student,enrolled:true}));
+  await as(teacher); await act({type:'enroll',courseId:course,studentId:student,enrolled:false});
+  await as(student);
+  expect((await db.query('select * from public.lessons')).rows).toEqual([]);
+  await denied(() => rpc('redeem_course_access_coupon',[org,course,token]));
+});
+test('course coupons are student-bound, single-use, and do not expose tokens through tables or audit', async () => {
+  await courseTerms(); await publishPreview(false); await as(teacher);
+  const token = (await rpc('create_course_access_coupon',[org,course,student])).rows[0].result as string;
+  const listing = (await rpc('list_course_access_coupons',[org,course])).rows[0].result as any[];
+  expect(listing).toHaveLength(1); expect(JSON.stringify(listing)).not.toContain(token);
+  await as(otherStudent); await denied(() => rpc('redeem_course_access_coupon',[org,course,token]));
+  await as(student);
+  await denied(() => rpc('list_course_access_coupons',[org,course]));
+  await denied(() => db.query('select * from private.course_access_coupons'));
+  await denied(() => rpc('redeem_course_access_coupon',[org,otherCourse,token]));
+  await rpc('redeem_course_access_coupon',[org,course,` ${token.toUpperCase()} `]);
+  expect((await db.query('select id from public.lessons')).rows).toEqual([{id:lesson}]);
+  await denied(() => rpc('redeem_course_access_coupon',[org,course,token]));
+  await as(admin); expect(JSON.stringify((await db.query('select * from public.audit_events')).rows)).not.toContain(token);
+});
+test.each(['expired','revoked','replaced','inactive','changed-terms'])('course coupons reject %s redemption', async (condition) => {
+  await courseTerms(); await as(teacher);
+  const token = (await rpc('create_course_access_coupon',[org,course,student])).rows[0].result;
+  if (condition==='revoked') {
+    const list = (await rpc('list_course_access_coupons',[org,course])).rows[0].result as any[];
+    await rpc('revoke_course_access_coupon',[org,course,list[0].id]);
+  }
+  if (condition==='replaced') await rpc('create_course_access_coupon',[org,course,student]);
+  if (condition==='changed-terms') {
+    await act({type:'course-access',id:course,visibility:'private',pricing:'free'});
+    await act({type:'course-access',id:course,visibility:'public',pricing:'paid'});
+  }
+  if (condition==='expired' || condition==='inactive') {
+    await db.exec('reset role');
+    if(condition==='expired') await db.query(`update private.course_access_coupons set "expiresAt"=now()-interval '1 day'`);
+    else await db.query('update public.memberships set active=false where "orgId"=$1 and "userId"=$2',[org,student]);
+  }
+  await as(student); await denied(() => rpc('redeem_course_access_coupon',[org,course,token]));
+});
+test('coupon issuance and student directory reject outsiders and invalid recipients', async () => {
+  await courseTerms(); await as(teacher);
+  const list = (await rpc('course_access_students',[org,course])).rows[0].result as any[];
+  expect(list).toEqual([{id:student,name:'Student',email:'student@example.com'}]);
+  await denied(() => rpc('create_course_access_coupon',[org,course,otherStudent]));
+  await denied(() => rpc('create_course_access_coupon',[org,course,teacher]));
+  await as(otherAdmin);
+  await denied(() => rpc('course_access_students',[org,course]));
+  await denied(() => rpc('create_course_access_coupon',[org,course,student]));
+  await as(student);
+  await denied(() => rpc('course_access_students',[org,course]));
+  await denied(() => rpc('create_course_access_coupon',[org,course,student]));
+});

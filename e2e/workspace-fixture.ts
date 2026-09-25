@@ -104,6 +104,20 @@ export async function fixture(
         if (a.type === "branding") org.branding = a.branding;
         if (a.type === "rename") org.name = a.name;
         if (a.type === "course") courses.push(a.course);
+        if (a.type === "course-access")
+          Object.assign(courses.find((c) => c.id === a.id) || {}, a);
+        if (a.type === "enroll") {
+          const i = enrollments.findIndex(
+            (e) => e.courseId === a.courseId && e.studentId === a.studentId,
+          );
+          if (!a.enrolled && i >= 0) enrollments.splice(i, 1);
+          if (a.enrolled && i < 0)
+            enrollments.push({
+              orgId,
+              courseId: a.courseId,
+              studentId: a.studentId,
+            });
+        }
         if (a.type === "session") sessions.push(a.session);
         if (a.type === "assignment") assignments.push(a.assignment);
         if (a.type === "lesson")
@@ -116,6 +130,8 @@ export async function fixture(
           if (index >= 0) completions.splice(index, 1);
           else completions.push({ orgId, lessonId: a.id, studentId: uid });
         }
+        if (a.type === "lesson-preview" && lesson)
+          lesson.isFreePreview = a.isFreePreview;
         if (a.type === "lesson-status" && lesson) lesson.status = a.status;
         if (a.type === "lesson-reference" && lesson)
           lesson.references.push(a.reference);

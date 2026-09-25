@@ -39,7 +39,13 @@ import {
   type FormKind,
 } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
-import { available, canAdmin, type Session } from "../../../shared/types";
+import {
+  available,
+  canAdmin,
+  hasCourseAccess,
+  type Session,
+} from "../../../shared/types";
+import { CourseAccess } from "./CourseAccess";
 import { CourseRoster } from "./CourseRoster";
 
 export function Dashboard() {
@@ -358,10 +364,14 @@ export function Courses() {
           { value: lessons.length, label: "lessons" },
         ]}
         eyebrow={roleContent[viewer.role].coursesEyebrow.toUpperCase()}
-        title={teacher ? "Your courses" : "My courses"}
-        description={roleContent[viewer.role].coursesDescription}
+        title={teacher ? "Your courses" : "Explore courses"}
+        description={
+          teacher
+            ? roleContent[viewer.role].coursesDescription
+            : "Explore public courses in your organization and the private courses you’ve joined."
+        }
         action={
-          canAdmin(viewer.role) && (
+          teacher && (
             <Button onClick={() => setForm(true)}>
               <Plus size={17} />
               Create course
@@ -422,7 +432,8 @@ export function CourseDetail({ id }: { id: string }) {
         text="Switch back to your courses to see what is available in this role and organization."
       />
     );
-  const canDelete = canAdmin(viewer.role) || course.teacherId === viewer.userId;
+  const canDelete =
+    teacher && (canAdmin(viewer.role) || course.teacherId === viewer.userId);
   const list = lessons.filter((l) => l.courseId === id);
   const roster = state.members.filter(
     (m) => m.orgId === viewer.orgId && course.studentIds.includes(m.id),
@@ -465,8 +476,17 @@ export function CourseDetail({ id }: { id: string }) {
           )
         }
       />
+      <CourseAccess
+        key={`${course.id}-${course.visibility}-${course.pricing}-${course.paymentInstructions}`}
+        course={course}
+        editable={canDelete}
+      />
       <div className="tabs" role="tablist" aria-label="Course views">
-        {["lessons", "schedule", ...(teacher ? ["roster"] : [])].map((t) => (
+        {[
+          "lessons",
+          ...(hasCourseAccess(course, viewer) ? ["schedule"] : []),
+          ...(teacher ? ["roster"] : []),
+        ].map((t) => (
           <button
             key={t}
             role="tab"
@@ -514,6 +534,7 @@ export function CourseDetail({ id }: { id: string }) {
                   <div>
                     <strong>{l.title}</strong>
                     <span>
+                      {l.isFreePreview ? "Free preview · " : ""}
                       {l.duration} min · {l.age} ·{" "}
                       {l.status === "published"
                         ? "Teacher-approved"
@@ -534,12 +555,16 @@ export function CourseDetail({ id }: { id: string }) {
           ) : (
             <Empty
               title="The first lesson is still ahead"
-              text="Reviewed and published lessons will appear here."
+              text={
+                hasCourseAccess(course, viewer)
+                  ? "Reviewed and published lessons will appear here."
+                  : "This teacher hasn’t published any free previews yet. Contact them to learn more before purchasing."
+              }
             />
           )}
         </>
       )}
-      {tab === "schedule" && (
+      {tab === "schedule" && hasCourseAccess(course, viewer) && (
         <>
           <SectionHeading
             title="Learn together"
@@ -577,7 +602,7 @@ export function CourseDetail({ id }: { id: string }) {
           <SectionHeading
             title={`${roster.length} curious minds`}
             action={
-              canAdmin(viewer.role) && (
+              teacher && (
                 <Button variant="secondary" onClick={() => setForm("member")}>
                   <Plus size={16} />
                   Add learner
@@ -599,15 +624,13 @@ export function CourseDetail({ id }: { id: string }) {
             {!roster.length && (
               <Empty
                 title="A fresh classroom"
-                text="Add learners using the teacher + admin role."
+                text="Enroll an organization student below or invite a new learner."
               />
             )}
           </div>
         </>
       )}
-      {tab === "roster" && canAdmin(viewer.role) && (
-        <CourseRoster course={course} />
-      )}
+      {tab === "roster" && teacher && <CourseRoster course={course} />}
       {form && (
         <ActionForm kind={form} courseId={id} close={() => setForm(null)} />
       )}

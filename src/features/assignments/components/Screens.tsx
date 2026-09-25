@@ -22,7 +22,7 @@ import {
 } from "../../../shared/components";
 import { ActionForm } from "../../../shared/components/ActionForm";
 import { useScope } from "../../../shared/hooks/useScope";
-import { available } from "../../../shared/types";
+import { available, hasCourseAccess } from "../../../shared/types";
 
 export function Assessments() {
   const { state, viewer, act } = useWorkspace();
@@ -32,7 +32,9 @@ export function Assessments() {
   const [reviewId, setReviewId] = useState<string | null>(null);
   if (!available(state, viewer, "assessments")) return <Unavailable />;
   const assignments = state.assignments.filter(
-    (a) => a.orgId === viewer.orgId && courses.some((c) => c.id === a.courseId),
+    (a) =>
+      a.orgId === viewer.orgId &&
+      courses.some((c) => c.id === a.courseId && hasCourseAccess(c, viewer)),
   );
   const assignment = assignments.find((a) => a.id === selected);
   const own = state.submissions.find(
@@ -72,7 +74,9 @@ export function Assessments() {
       )}
       <div className="assessment-list">
         {assignments.map((a) => {
-          const course = courses.find((c) => c.id === a.courseId)!;
+          const course = courses.find(
+            (c) => c.id === a.courseId && hasCourseAccess(c, viewer),
+          )!;
           const sub = state.submissions.find(
             (s) => s.assignmentId === a.id && s.studentId === viewer.userId,
           );

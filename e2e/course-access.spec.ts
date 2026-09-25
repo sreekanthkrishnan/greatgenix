@@ -1,0 +1,189 @@
+import { expect, test } from "@playwright/test";
+import { fixture, signIn, uid, orgId } from "./workspace-fixture";
+const courseId = "00000000-0000-4000-8000-000000000020";
+const studentId = "00000000-0000-4000-8000-000000000003";
+const paidCourse = {
+  id: courseId,
+  orgId,
+  title: "Practical algebra",
+  subject: "Math",
+  grade: "9",
+  batch: "A",
+  description: "Learn algebra",
+  teacherId: uid,
+  color: "sage",
+  visibility: "public",
+  pricing: "paid",
+  paymentInstructions: "Pay 500 to your teacher and share your receipt.",
+};
+const lesson = {
+  id: "00000000-0000-4000-8000-000000000030",
+  orgId,
+  courseId,
+  title: "First look",
+  subject: "Math",
+  age: "13–15",
+  duration: 10,
+  status: "published",
+  type: "notes",
+  content: "Try a simple equation.",
+  isFreePreview: true,
+};
+
+test("teacher creates a paid public course and marks a lesson as a free preview", async ({
+  page,
+}) => {
+  const data = await fixture(page, "teacher");
+  await signIn(page);
+  await page.goto("/#/courses");
+  await page
+    .getByRole("button", { name: "Create course", exact: true })
+    .click();
+  await page.getByLabel("Title / name").fill("Practical algebra");
+  await page.getByLabel("Subject", { exact: true }).fill("Math");
+  await page.getByLabel("Grade", { exact: true }).fill("9");
+  await page.getByLabel("Batch", { exact: true }).fill("A");
+  await page.getByLabel("Introduction").fill("Learn algebra");
+  await page
+    .getByRole("combobox", { name: "Course access", exact: true })
+    .selectOption("paid");
+  await page
+    .getByLabel("Manual payment instructions")
+    .fill("Pay 500 to your teacher.");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(data.courses[0]).toMatchObject({
+    visibility: "public",
+    pricing: "paid",
+    teacherId: uid,
+  });
+  await page
+    .getByRole("link")
+    .filter({ has: page.getByRole("heading", { name: "Practical algebra" }) })
+    .click();
+  await page.getByRole("button", { name: "Add recording" }).click();
+  await page.getByLabel("Title / name").fill("First look");
+  await page.getByLabel("Material type").selectOption("notes");
+  await page
+    .getByLabel("Lesson Notes & Content")
+    .fill("Try a simple equation.");
+  await page.getByLabel("Free preview in paid public courses").check();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "First look" })).toBeVisible();
+  expect(data.lessons[0].isFreePreview).toBe(true);
+  await page.getByLabel("Free preview in paid public courses").click();
+  await expect(
+    page.getByLabel("Free preview in paid public courses"),
+  ).not.toBeChecked();
+});
+
+test("student sees previews, handles coupon errors, and unlocks full course access", async ({
+  page,
+}) => {
+  const data = await fixture(page, "student");
+  data.courses.push(paidCourse);
+  data.lessons.push(lesson, {
+    ...lesson,
+    id: "00000000-0000-4000-8000-000000000031",
+    title: "Paid lesson",
+    isFreePreview: false,
+  });
+  await page.route(
+    "**/rest/v1/rpc/redeem_course_access_coupon",
+    async (route) => {
+      if (route.request().postDataJSON().p_token !== "VALID-COUPON")
+        return route.fulfill({
+          status: 403,
+          json: { message: "Coupon is invalid or belongs to another student" },
+        });
+      data.enrollments.push({ orgId, courseId, studentId: uid });
+      return route.fulfill({ json: null });
+    },
+  );
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  await expect(
+    page.getByRole("heading", {
+      name: "Preview this course before purchasing",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(paidCourse.paymentInstructions, { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /First look/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Paid lesson/ })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "Class schedule" })).toHaveCount(
+    0,
+  );
+  await page.getByLabel("Your course access coupon").fill("WRONG");
+  await page.getByRole("button", { name: "Redeem access coupon" }).click();
+  await expect(page.getByRole("alert")).toContainText("invalid");
+  await page.getByLabel("Your course access coupon").fill("VALID-COUPON");
+  await page.getByRole("button", { name: "Redeem access coupon" }).click();
+  await expect(
+    page.getByRole("heading", { name: "You have full course access" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Paid lesson/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Class schedule" })).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "You have full course access" }),
+  ).toBeVisible();
+});
+
+test("teacher issues and revokes coupons and directly grants access to organization students", async ({
+  page,
+}) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push(paidCourse);
+  const coupons: any[] = [];
+  await page.route("**/rest/v1/rpc/course_access_students", (route) =>
+    route.fulfill({
+      json: [{ id: studentId, name: "Sam Student", email: "sam@example.com" }],
+    }),
+  );
+  await page.route("**/rest/v1/rpc/list_course_access_coupons", (route) =>
+    route.fulfill({ json: coupons }),
+  );
+  await page.route("**/rest/v1/rpc/create_course_access_coupon", (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      p_org: orgId,
+      p_course: courseId,
+      p_student: studentId,
+    });
+    coupons.push({
+      id: "coupon-1",
+      studentId,
+      expiresAt: "2099-01-01",
+      redeemedAt: null,
+      revoked: false,
+    });
+    return route.fulfill({ json: "STUDENT-BOUND-COUPON" });
+  });
+  await page.route("**/rest/v1/rpc/revoke_course_access_coupon", (route) => {
+    coupons[0].revoked = true;
+    return route.fulfill({ json: null });
+  });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  await page.getByRole("tab", { name: "Class roster" }).click();
+  await page
+    .getByRole("button", { name: "Payment confirmed — create coupon" })
+    .click();
+  await expect(page.getByLabel("Access coupon for Sam Student")).toHaveValue(
+    "STUDENT-BOUND-COUPON",
+  );
+  await page.getByRole("button", { name: "Revoke coupon" }).click();
+  await expect(page.getByText("Revoked", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Payment confirmed — grant access" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Remove from course" }),
+  ).toBeVisible();
+  expect(data.enrollments).toContainEqual({ orgId, courseId, studentId });
+  await page.getByRole("button", { name: "Remove from course" }).click();
+  await expect(
+    page.getByRole("button", { name: "Payment confirmed — grant access" }),
+  ).toBeVisible();
+});

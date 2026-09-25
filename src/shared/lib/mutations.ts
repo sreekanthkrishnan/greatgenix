@@ -10,6 +10,7 @@ import { save as save7 } from "../../features/memberships/api";
 import { save as save8 } from "../../features/reports/api";
 export function mutate(orgId: string, action: Action) {
   switch (action.type) {
+    case "course-access":
     case "course":
     case "enroll":
     case "assign-teacher":
@@ -18,6 +19,7 @@ export function mutate(orgId: string, action: Action) {
     case "session":
     case "delete-session":
       return save1(orgId, action);
+    case "lesson-preview":
     case "lesson":
     case "lesson-status":
     case "lesson-reference":

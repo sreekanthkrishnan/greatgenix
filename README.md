@@ -74,3 +74,13 @@ npx --yes deno check supabase/functions/*/index.ts
 Database tests execute the actual migrations and SQL authorization rules in PGlite (PostgreSQL compiled to WASM) with Supabase-style test auth roles. They do not mock SQL. Browser tests use mocked Supabase HTTP responses to check the React flows, error handling, persistence reload behavior, restricted navigation, and mobile layout; they do not substitute for hosted Supabase integration tests. Browser tests use installed Google Chrome.
 
 No hosted project or paid video provider has been provisioned by this repository. Production deployment, real auth email delivery, and actual Daily/Mux calls must be verified against configured accounts before a pilot.
+
+## Course visibility and manual payments
+
+Apply `supabase/migrations/202609250001_course_access.sql` before deploying the updated frontend. Existing courses remain private, and existing enrollments retain full access.
+
+Teachers can create their own private courses or public courses (free or paid). Public visibility is restricted to active students in the same organization; organization subscription and feature requirements still apply. Teachers manage access settings on the course page and mark individual lessons as free previews when adding them or from the lesson publishing panel. Preview lessons must be published. Their attached references inherit the lesson’s access rules. Paid lessons, live sessions, and assessments require full access; public free courses require no enrollment.
+
+After confirming payment outside the platform, a course teacher or organization administrator can use the class roster to grant an organization student full access directly, or generate a coupon for that student. Coupons expire after seven days and can be redeemed once on the paid course page. Only a hash is stored; save and share the displayed code when it is created. Replacing or revoking a coupon, granting/removing access, or changing a course away from public paid access invalidates outstanding coupons. Removing enrollment cannot restrict a public free course. Private course invitations are available to the assigned teacher and organization administrators; existing members can be enrolled directly.
+
+This course access flow is separate from platform subscription coupons. It does not process or verify payments automatically. Access controls protect content served by the app; externally hosted public links remain governed by their hosting provider. The isolated `?demo=1` prototype retains its original behavior.

@@ -24,7 +24,7 @@ export const roleContent: Record<
     workspace: "Your learning space",
     overviewDescription:
       "Continue your lessons, join classes and follow your progress.",
-    coursesEyebrow: "Your enrolled courses",
+    coursesEyebrow: "Your organization’s courses",
     coursesDescription:
       "Find your lessons, class schedules and learning resources.",
     libraryEyebrow: "Your learning collection",
@@ -36,7 +36,7 @@ export const roleContent: Record<
     assessmentsDescription:
       "Complete your assignments and review your teacher’s feedback.",
     emptyCourses:
-      "Your enrolled courses will appear here. Ask your teacher about joining a course.",
+      "Public courses and private courses you’ve joined will appear here. Ask your teacher about joining a course.",
     profileDescription:
       "Manage the profile your teachers see in your learning workspace.",
   },
@@ -57,7 +57,7 @@ export const roleContent: Record<
     assessmentsDescription:
       "Create assignments, review submissions and give learners feedback.",
     emptyCourses:
-      "Courses assigned to you will appear here. Contact your organization administrator for an assignment.",
+      "Create your first course, or ask your organization administrator to assign an existing course to you.",
     profileDescription:
       "Introduce yourself to your learners and teaching colleagues.",
   },

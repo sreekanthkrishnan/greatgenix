@@ -151,7 +151,7 @@ test("lesson republishing and typed references survive reload", async ({
   await expect(
     page.getByRole("button", { name: "Publish lesson" }),
   ).toBeDisabled();
-  await page.getByRole("checkbox").check();
+  await page.getByRole("checkbox", { name: /I confirm approval/ }).check();
   await page.getByRole("button", { name: "Publish lesson" }).click();
   await expect(page.getByText("Visible to enrolled learners")).toBeVisible();
   await page.getByRole("button", { name: "Add reference" }).click();

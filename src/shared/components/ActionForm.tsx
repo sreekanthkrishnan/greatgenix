@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useWorkspace } from "../../app/providers/OrgContextProvider";
-import { canSeeCourse, localDate, type LessonType } from "../types";
+import { canAdmin, canSeeCourse, localDate, type LessonType } from "../types";
 import { Button, Field, Modal, Notice } from "./index";
 import { InviteForm } from "../../features/memberships/components/Members";
 import { createOrganization } from "../../features/organizations/api";
@@ -24,6 +24,7 @@ export function ActionForm({
   lessonId?: string;
 }) {
   const { state, viewer, act, busy, refresh } = useWorkspace();
+  const [courseType, setCourseType] = useState("private");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [lessonType, setLessonType] = useState<LessonType>("video");
@@ -67,7 +68,12 @@ export function ActionForm({
             course: {
               id,
               orgId: viewer.orgId,
-              teacherId: value("teacher"),
+              teacherId: canAdmin(viewer.role)
+                ? value("teacher")
+                : viewer.userId,
+              visibility: courseType === "private" ? "private" : "public",
+              pricing: courseType === "paid" ? "paid" : "free",
+              paymentInstructions: value("paymentInstructions"),
               title: value("title"),
               subject: value("subject"),
               grade: value("grade"),
@@ -80,10 +86,14 @@ export function ActionForm({
           break;
         case "session":
           {
-            const cleanTitle = value("title").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 9);
+            const cleanTitle = value("title")
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "")
+              .slice(0, 9);
             const defaultMeetCode = `${cleanTitle.slice(0, 3) || "ggx"}-${cleanTitle.slice(3, 6) || "mtg"}-${cleanTitle.slice(6, 9) || "live"}`;
             const pastedLink = value("gmeetLink") || value("meetingUrl");
-            const meetingUrl = pastedLink || `https://meet.google.com/${defaultMeetCode}`;
+            const meetingUrl =
+              pastedLink || `https://meet.google.com/${defaultMeetCode}`;
             ok = await act({
               type: "session",
               session: {
@@ -106,8 +116,10 @@ export function ActionForm({
         case "recording":
           {
             const type = (value("type") as LessonType) || "video";
-            const url = type === "document" && docFileUrl ? docFileUrl : value("url");
-            const fileName = type === "document" && docFileName ? docFileName : undefined;
+            const url =
+              type === "document" && docFileUrl ? docFileUrl : value("url");
+            const fileName =
+              type === "document" && docFileName ? docFileName : undefined;
             const content = value("content");
             ok = await act({
               type: "lesson",
@@ -125,6 +137,7 @@ export function ActionForm({
                 url,
                 fileName,
                 content,
+                isFreePreview: f.get("isFreePreview") === "on",
                 completeBy: [],
               },
             });
@@ -205,8 +218,35 @@ export function ActionForm({
             <Field label="Introduction">
               <textarea name="description" required maxLength={400} />
             </Field>
+            <Field label="Course access">
+              <select
+                value={courseType}
+                onChange={(e) => setCourseType(e.target.value)}
+              >
+                <option value="private">
+                  Private — added or invited students only
+                </option>
+                <option value="free">
+                  Public — free for all organization students
+                </option>
+                <option value="paid">Public — paid, with free previews</option>
+              </select>
+            </Field>
+            {courseType === "paid" && (
+              <Field label="Manual payment instructions">
+                <textarea
+                  name="paymentInstructions"
+                  maxLength={2000}
+                  placeholder="Price, payment method, and how students should contact you after payment."
+                />
+              </Field>
+            )}
             <Field label="Assigned teacher">
-              <select name="teacher" defaultValue={viewer.userId}>
+              <select
+                name="teacher"
+                defaultValue={viewer.userId}
+                disabled={!canAdmin(viewer.role)}
+              >
                 {state.members
                   .filter((m) => m.role !== "student" && m.active !== false)
                   .map((m) => (
@@ -254,12 +294,17 @@ export function ActionForm({
               />
             </Field>
             <Notice>
-              Paste any video conferencing link (Google Meet, Zoom, MS Teams, etc.). A default meeting link will be provided if left blank.
+              Paste any video conferencing link (Google Meet, Zoom, MS Teams,
+              etc.). A default meeting link will be provided if left blank.
             </Notice>
           </>
         )}
         {kind === "recording" && (
           <>
+            <label className="checkbox-row">
+              <input name="isFreePreview" type="checkbox" />
+              Free preview in paid public courses
+            </label>
             <Field label="Material type">
               <select
                 name="type"
@@ -267,8 +312,12 @@ export function ActionForm({
                 onChange={(e) => setLessonType(e.target.value as LessonType)}
               >
                 <option value="video">Video (YouTube, Vimeo, MP4 URL)</option>
-                <option value="audio">Audio (MP3, SoundCloud, Podcast URL)</option>
-                <option value="document">Document (Upload File or PDF URL)</option>
+                <option value="audio">
+                  Audio (MP3, SoundCloud, Podcast URL)
+                </option>
+                <option value="document">
+                  Document (Upload File or PDF URL)
+                </option>
                 <option value="link">Link (External web resource)</option>
                 <option value="notes">Notes (Text / Markdown content)</option>
               </select>
@@ -282,7 +331,14 @@ export function ActionForm({
                     onChange={handleDocumentFileChange}
                   />
                   {docFileName && (
-                    <span className="muted" style={{ fontSize: "0.85rem", marginTop: "4px", display: "block" }}>
+                    <span
+                      className="muted"
+                      style={{
+                        fontSize: "0.85rem",
+                        marginTop: "4px",
+                        display: "block",
+                      }}
+                    >
                       Selected file: <strong>{docFileName}</strong>
                     </span>
                   )}
@@ -297,7 +353,9 @@ export function ActionForm({
                 </Field>
               </>
             ) : lessonType !== "notes" ? (
-              <Field label={`${lessonType.charAt(0).toUpperCase() + lessonType.slice(1)} URL`}>
+              <Field
+                label={`${lessonType.charAt(0).toUpperCase() + lessonType.slice(1)} URL`}
+              >
                 <input
                   name="url"
                   type="url"
@@ -338,7 +396,6 @@ export function ActionForm({
                 defaultValue={20}
               />
             </Field>
-
           </>
         )}
         {kind === "assignment" && (

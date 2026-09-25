@@ -11,6 +11,14 @@ import type {
 } from "./index";
 export type Action =
   | { type: "course"; course: Course }
+  | {
+      type: "course-access";
+      id: string;
+      visibility: "private" | "public";
+      pricing: "free" | "paid";
+      paymentInstructions: string;
+    }
+  | { type: "lesson-preview"; id: string; isFreePreview: boolean }
   | { type: "session"; session: Session }
   | { type: "lesson"; lesson: Lesson }
   | { type: "assignment"; assignment: Assignment }

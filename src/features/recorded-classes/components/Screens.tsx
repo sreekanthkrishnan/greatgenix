@@ -7,7 +7,7 @@ import {
   Plus,
   Search,
   ShieldCheck,
-    Trash2,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
@@ -57,8 +57,7 @@ export function Recordings({ id }: { id?: string }) {
   if (lesson) {
     const course = state.courses.find((c) => c.id === lesson.courseId)!;
     const canDeleteLesson =
-      teacher &&
-      (canAdmin(viewer.role) || course?.teacherId === viewer.userId);
+      teacher && (canAdmin(viewer.role) || course?.teacherId === viewer.userId);
 
     async function handleDeleteLesson() {
       if (!lesson) return;
@@ -101,6 +100,24 @@ export function Recordings({ id }: { id?: string }) {
                 <CheckCircle2 size={15} />
                 Completed
               </span>
+            )}
+            {lesson.isFreePreview && <Badge tone="sage">Free preview</Badge>}
+            {teacher && (
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={lesson.isFreePreview === true}
+                  disabled={busy}
+                  onChange={(e) =>
+                    act({
+                      type: "lesson-preview",
+                      id: lesson.id,
+                      isFreePreview: e.target.checked,
+                    })
+                  }
+                />
+                Free preview in paid public courses
+              </label>
             )}
             <h3>{teacher ? "Lesson publishing" : "Your progress"}</h3>
             <p>

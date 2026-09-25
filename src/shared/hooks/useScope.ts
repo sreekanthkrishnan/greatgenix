@@ -1,10 +1,17 @@
 import { useWorkspace } from "../../app/providers/OrgContextProvider";
-import { canSeeCourse, isTeacher, visibleLessons } from "../types";
+import {
+  canSeeCourse,
+  hasCourseAccess,
+  isTeacher,
+  visibleLessons,
+} from "../types";
 export function useScope() {
   const { state, viewer } = useWorkspace();
   const courses = state.courses.filter((c) => canSeeCourse(c, viewer));
   const sessions = state.sessions
-    .filter((s) => courses.some((c) => c.id === s.courseId))
+    .filter((s) =>
+      courses.some((c) => c.id === s.courseId && hasCourseAccess(c, viewer)),
+    )
     .map((s) => {
       if (!s.startsAt) return s;
       const date = new Date(s.startsAt);

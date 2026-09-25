@@ -239,6 +239,13 @@ export function CourseCard({
         </div>
         <h3>{course.title}</h3>
         <p>{course.batch}</p>
+        <Badge tone={course.visibility === "public" ? "sage" : "peach"}>
+          {course.visibility === "public"
+            ? course.pricing === "paid"
+              ? "Public · Paid"
+              : "Public · Free"
+            : "Private"}
+        </Badge>
         <div className="course-foot">
           <span>{detail}</span>
           <span className="circle-arrow">

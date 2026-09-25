@@ -6,6 +6,7 @@ export const save = (
     Action,
     {
       type:
+        | "lesson-preview"
         | "lesson"
         | "lesson-status"
         | "lesson-reference"
