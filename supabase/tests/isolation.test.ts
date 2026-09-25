@@ -1061,7 +1061,7 @@ test('course thumbnails persist, survive omitted updates, and can be removed', a
   expect(await saved()).toBeNull();
 });
 
-test.each(['https://example.com/image.png','data:image/svg+xml;base64,AAAA','data:image/png;base64,' + 'A'.repeat(270000)])('course thumbnails reject unsupported or oversized content %#', async (thumbnailUrl) => {
+test.each(['https://example.com/image.png','data:image/svg+xml;base64,AAAA','data:image/png;base64,' + 'A'.repeat(2666668)])('course thumbnails reject unsupported or oversized content %#', async (thumbnailUrl) => {
   await as(teacher);
   await denied(() => act({type:'course-access',id:course,visibility:'private',pricing:'free',thumbnailUrl}), /course_thumbnail_valid/);
 });
@@ -1078,4 +1078,13 @@ test('course optional metadata and system artwork support omitted creation field
   expect(await saved()).toEqual({subject:'',grade:'',batch:'',color:'lavender'});
   await as(student);
   await denied(() => act({type:'course-access',id:id(96),visibility:'private',pricing:'free',color:'sage'}));
+});
+
+
+test('course thumbnails accept 2 MB and reject larger decoded images', async () => {
+  await as(teacher);
+  const thumbnailUrl = 'data:image/png;base64,' + Buffer.alloc(2_000_000).toString('base64');
+  await act({type:'course-access',id:course,visibility:'private',pricing:'free',thumbnailUrl});
+  expect((await db.query('select length("thumbnailUrl") as length from public.courses where id=$1',[course])).rows[0].length).toBe(thumbnailUrl.length);
+  await denied(() => act({type:'course-access',id:course,visibility:'private',pricing:'free',thumbnailUrl:'data:image/png;base64,' + Buffer.alloc(2_000_001).toString('base64')}), /course_thumbnail_valid/);
 });

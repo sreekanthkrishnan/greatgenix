@@ -34,4 +34,5 @@ export function applyBranding(branding: Branding) {
   root.style.setProperty("--app-font", fonts[branding.fontFamily]);
   root.style.fontSize = `${branding.fontSize}px`;
 }
-export const validateLogo = (file: File) => validateImage(file, "logo");
+export const validateLogo = (file: File) =>
+  validateImage(file, "logo", 200_000);

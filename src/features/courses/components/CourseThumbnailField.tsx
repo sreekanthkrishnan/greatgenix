@@ -57,7 +57,7 @@ export function CourseThumbnailField({
       </fieldset>
       <Field
         label="Course thumbnail (optional)"
-        hint="PNG, JPEG or WebP under 200 KB. A landscape image works best. Leave empty to use the built-in artwork."
+        hint="PNG, JPEG or WebP up to 2 MB. A landscape image works best. Leave empty to use the built-in artwork."
       >
         <input
           type="file"

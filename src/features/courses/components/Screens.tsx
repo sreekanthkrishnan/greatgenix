@@ -1,3 +1,4 @@
+import { CoursePrice } from "../../../shared/components/CoursePrice";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import { profileText } from "../../../shared/utils/roleContent";
 import { roleContent } from "../../../shared/utils/roleContent";
@@ -26,6 +27,7 @@ import {
   Badge,
   Button,
   CourseCard,
+  CourseThumbnail,
   Empty,
   PageHeading,
   SectionHeading,
@@ -439,72 +441,104 @@ export function CourseDetail({ id }: { id: string }) {
     );
   const canEdit =
     teacher && (canAdmin(viewer.role) || course.teacherId === viewer.userId);
+  const access = hasCourseAccess(course, viewer);
   const list = lessons.filter((l) => l.courseId === id);
   const roster = state.members.filter(
     (m) => m.orgId === viewer.orgId && course.studentIds.includes(m.id),
   );
 
   return (
-    <>
+    <div className="course-detail-page">
       <a
         className="back-link"
         href={hasCourseAccess(course, viewer) ? "#/courses" : "#/explore"}
       >
         {hasCourseAccess(course, viewer) ? "← My courses" : "← Explore courses"}
       </a>
-      <PageHeading
-        section="courses"
-        eyebrow={
-          [course.subject, course.grade, course.batch]
-            .filter(Boolean)
-            .join(" / ") || "COURSE"
-        }
-        title={course.title}
-        description={course.description}
-        summary={[
-          { value: course.studentIds.length, label: "learners" },
-          { value: list.length, label: "lessons" },
-        ]}
-        action={
-          canEdit && (
-            <a
-              className="button secondary"
-              href={`#/courses/${course.id}/edit`}
-            >
-              <Pencil size={16} />
-              Edit course
-            </a>
-          )
-        }
-      />
+      <header className="panel course-detail-header">
+        <div className="course-detail-overview">
+          <div className="course-detail-cover">
+            <CourseThumbnail
+              thumbnailUrl={course.thumbnailUrl}
+              color={course.color}
+            />
+          </div>
+          <div className="course-detail-copy">
+            <div className="course-detail-meta">
+              <Badge>
+                {course.visibility === "public"
+                  ? course.pricing === "paid"
+                    ? "Paid"
+                    : "Free"
+                  : "Private"}
+              </Badge>
+              {[course.subject, course.grade, course.batch]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+            <h1>{course.title}</h1>
+            {course.description && <p>{course.description}</p>}
+            <div className="course-detail-stats">
+              <span>
+                {list.length} {access ? "lessons" : "preview lessons"}
+              </span>
+              {teacher && <span>{course.studentIds.length} learners</span>}
+              {!teacher && access && (
+                <span className="course-access-status">
+                  <CheckCircle2 size={14} />
+                  You have full course access
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        {(canEdit || (access && course.pricing === "paid")) && (
+          <div className="course-detail-actions">
+            {access && course.pricing === "paid" && (
+              <CoursePrice course={course} />
+            )}
+            {canEdit && (
+              <a
+                className="button secondary"
+                href={`#/courses/${course.id}/edit`}
+              >
+                <Pencil size={16} />
+                Edit course
+              </a>
+            )}
+          </div>
+        )}
+      </header>
       <CourseAccess
         key={`${course.id}-${course.visibility}-${course.pricing}-${course.coursePrice}-${course.discountedPrice}`}
         course={course}
       />
-      <div className="tabs" role="tablist" aria-label="Course views">
-        {[
-          "lessons",
-          ...(hasCourseAccess(course, viewer) ? ["schedule"] : []),
-          ...(teacher ? ["roster"] : []),
-        ].map((t) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-          >
-            {t === "lessons"
-              ? "Lesson library"
-              : t === "schedule"
-                ? "Class schedule"
-                : "Class roster"}
-          </button>
-        ))}
-      </div>
+      {(access || teacher) && (
+        <div className="tabs" role="tablist" aria-label="Course views">
+          {[
+            "lessons",
+            ...(hasCourseAccess(course, viewer) ? ["schedule"] : []),
+            ...(teacher ? ["roster"] : []),
+          ].map((t) => (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => setTab(t)}
+            >
+              {t === "lessons"
+                ? "Lesson library"
+                : t === "schedule"
+                  ? "Class schedule"
+                  : "Class roster"}
+            </button>
+          ))}
+        </div>
+      )}
       {tab === "lessons" && (
         <>
           <SectionHeading
-            title="A lesson at a time"
+            title={access ? "Lessons" : "Preview lessons"}
             action={
               teacher &&
               available(state, viewer, "recordings") && (
@@ -567,7 +601,7 @@ export function CourseDetail({ id }: { id: string }) {
       {tab === "schedule" && hasCourseAccess(course, viewer) && (
         <>
           <SectionHeading
-            title="Learn together"
+            title="Class schedule"
             action={
               teacher &&
               available(state, viewer, "live") && (
@@ -634,6 +668,6 @@ export function CourseDetail({ id }: { id: string }) {
       {form && (
         <ActionForm kind={form} courseId={id} close={() => setForm(null)} />
       )}
-    </>
+    </div>
   );
 }

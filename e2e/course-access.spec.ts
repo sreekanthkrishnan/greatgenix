@@ -156,13 +156,13 @@ test("student sees previews, handles coupon errors, and unlocks full course acce
   await page.getByLabel("Your course access coupon").fill("VALID-COUPON");
   await page.getByRole("button", { name: "Redeem access coupon" }).click();
   await expect(
-    page.getByRole("heading", { name: "You have full course access" }),
+    page.getByText("You have full course access", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /Paid lesson/ })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Class schedule" })).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "You have full course access" }),
+    page.getByText("You have full course access", { exact: true }),
   ).toBeVisible();
 });
 
@@ -377,7 +377,9 @@ for (const [name, price, discount] of [
   ["missing price", null, null],
   ["invalid price", -1, 10],
 ] as const) {
-  test(`student pricing handles ${name} on mobile`, async ({ page }) => {
+  test(`student pricing handles ${name} on mobile`, async ({
+    page,
+  }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const data = await fixture(page, "student");
     data.courses.push({
@@ -402,6 +404,11 @@ for (const [name, price, discount] of [
         }),
       ).toBeVisible();
     await expect(page.getByLabel("Your course access coupon")).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("course-details-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -429,15 +436,26 @@ test("teacher replaces and removes a thumbnail and rejects invalid uploads", asy
   await upload.setInputFiles({
     name: "large.png",
     mimeType: "image/png",
-    buffer: Buffer.alloc(200001),
+    buffer: Buffer.alloc(2_000_001),
   });
-  await expect(page.getByRole("alert")).toContainText("under 200 KB");
+  await expect(page.getByRole("alert")).toContainText("up to 2 MB");
   await upload.setInputFiles({
     name: "broken.png",
     mimeType: "image/png",
     buffer: Buffer.from("broken image"),
   });
   await expect(page.getByRole("alert")).toContainText("not a valid image");
+  await upload.setInputFiles({
+    ...thumbnailFile,
+    buffer: Buffer.concat([
+      thumbnailFile.buffer,
+      Buffer.alloc(2_000_000 - thumbnailFile.buffer.length),
+    ]),
+  });
+  await expect(
+    page.getByRole("button", { name: "Remove thumbnail" }),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
   await upload.setInputFiles(thumbnailFile);
   await expect(page.locator(".course-thumbnail-editor img")).toHaveAttribute(
     "src",
@@ -557,7 +575,9 @@ test("optional metadata and built-in thumbnail choices save and edit correctly",
   expect(data.courses[0]).toMatchObject({ color: "sage", thumbnailUrl: null });
 });
 
-test("course details and editing have separate routes", async ({ page }) => {
+test("course details and editing have separate routes", async ({
+  page,
+}, testInfo) => {
   const data = await fixture(page, "teacher");
   data.courses.push({ ...paidCourse });
   await signIn(page);
@@ -592,6 +612,14 @@ test("course details and editing have separate routes", async ({ page }) => {
   await expect.poll(() => data.courses[0].coursePrice).toBe(6000);
   await page.getByRole("link", { name: "Back to course", exact: true }).click();
   await expect(page.locator(".course-price-values del")).toContainText("6,000");
+  await expect(
+    page.getByText("Payment Information", { exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath("course-details-desktop.png"),
+    fullPage: true,
+    animations: "disabled",
+  });
 });
 
 test("students cannot open the course editor", async ({ page }) => {

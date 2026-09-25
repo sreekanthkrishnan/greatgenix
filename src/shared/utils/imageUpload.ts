@@ -1,10 +1,18 @@
-export function validateImage(file: File, label = "image"): Promise<string> {
+export function validateImage(
+  file: File,
+  label = "image",
+  maxBytes = 2_000_000,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     if (
       !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-      file.size > 200000
+      file.size > maxBytes
     ) {
-      reject(new Error(`Choose a PNG, JPEG or WebP ${label} under 200 KB.`));
+      const limit =
+        maxBytes >= 1_000_000
+          ? `${maxBytes / 1_000_000} MB`
+          : `${maxBytes / 1000} KB`;
+      reject(new Error(`Choose a PNG, JPEG or WebP ${label} up to ${limit}.`));
       return;
     }
     const reader = new FileReader();
