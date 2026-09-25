@@ -1,3 +1,8 @@
+import {
+  AccessOptions,
+  PaymentInstructions,
+  type AccessKind,
+} from "../../features/courses/components/AccessOptions";
 import { useState } from "react";
 import { useWorkspace } from "../../app/providers/OrgContextProvider";
 import { canAdmin, canSeeCourse, localDate, type LessonType } from "../types";
@@ -24,7 +29,8 @@ export function ActionForm({
   lessonId?: string;
 }) {
   const { state, viewer, act, busy, refresh } = useWorkspace();
-  const [courseType, setCourseType] = useState("private");
+  const [courseType, setCourseType] = useState<AccessKind>("private");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [lessonType, setLessonType] = useState<LessonType>("video");
@@ -73,7 +79,7 @@ export function ActionForm({
                 : viewer.userId,
               visibility: courseType === "private" ? "private" : "public",
               pricing: courseType === "paid" ? "paid" : "free",
-              paymentInstructions: value("paymentInstructions"),
+              paymentInstructions,
               title: value("title"),
               subject: value("subject"),
               grade: value("grade"),
@@ -218,28 +224,16 @@ export function ActionForm({
             <Field label="Introduction">
               <textarea name="description" required maxLength={400} />
             </Field>
-            <Field label="Course access">
-              <select
-                value={courseType}
-                onChange={(e) => setCourseType(e.target.value)}
-              >
-                <option value="private">
-                  Private — added or invited students only
-                </option>
-                <option value="free">
-                  Public — free for all organization students
-                </option>
-                <option value="paid">Public — paid, with free previews</option>
-              </select>
-            </Field>
+            <AccessOptions
+              value={courseType}
+              onChange={setCourseType}
+              disabled={busy || saving}
+            />
             {courseType === "paid" && (
-              <Field label="Manual payment instructions">
-                <textarea
-                  name="paymentInstructions"
-                  maxLength={2000}
-                  placeholder="Price, payment method, and how students should contact you after payment."
-                />
-              </Field>
+              <PaymentInstructions
+                value={paymentInstructions}
+                onChange={setPaymentInstructions}
+              />
             )}
             <Field label="Assigned teacher">
               <select

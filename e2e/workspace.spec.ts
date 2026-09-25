@@ -8,7 +8,7 @@ test("sign in, create persistent course and assessment, and save organization br
   await fixture(page);
   await signIn(page);
   await expect(page.getByLabel("Demo role")).toHaveCount(0);
-  await page.getByRole("link", { name: "My classroom", exact: true }).click();
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
   await page
     .getByRole("button", { name: "Create course", exact: true })
     .click();
@@ -68,7 +68,7 @@ test("failed saves retain the form and never claim success", async ({
 }) => {
   const f = await fixture(page);
   await signIn(page);
-  await page.getByRole("link", { name: "My classroom", exact: true }).click();
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
   await page.getByRole("button", { name: "Create course" }).click();
   await page.getByLabel("Title / name").fill("Unsaved course");
   await page.getByLabel("Subject", { exact: true }).fill("Math");
@@ -124,7 +124,7 @@ test("lesson republishing and typed references survive reload", async ({
 }) => {
   await fixture(page);
   await signIn(page);
-  await page.getByRole("link", { name: "My classroom", exact: true }).click();
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
   await page
     .getByRole("button", { name: "Create course", exact: true })
     .click();

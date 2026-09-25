@@ -9,6 +9,7 @@ import {
 } from "../../shared/utils/roleContent";
 import { useEffect, useState } from "react";
 import {
+  Compass,
   CreditCard,
   Ticket,
   BookOpen,
@@ -86,9 +87,10 @@ export function WorkspaceLayout() {
         { id: "dashboard", label: "Overview", icon: LayoutDashboard },
         {
           id: "courses",
-          label: viewer.role === "student" ? "My courses" : "My classroom",
+          label: "My courses",
           icon: BookOpen,
         },
+        { id: "explore", label: "Explore courses", icon: Compass },
         ...(org.features.live
           ? [{ id: "sessions", label: "Class schedule", icon: CalendarDays }]
           : []),

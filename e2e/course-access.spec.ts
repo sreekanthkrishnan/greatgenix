@@ -44,9 +44,7 @@ test("teacher creates a paid public course and marks a lesson as a free preview"
   await page.getByLabel("Grade", { exact: true }).fill("9");
   await page.getByLabel("Batch", { exact: true }).fill("A");
   await page.getByLabel("Introduction").fill("Learn algebra");
-  await page
-    .getByRole("combobox", { name: "Course access", exact: true })
-    .selectOption("paid");
+  await page.getByRole("radio", { name: "Public · Paid", exact: true }).check();
   await page
     .getByLabel("Manual payment instructions")
     .fill("Pay 500 to your teacher.");
@@ -186,4 +184,120 @@ test("teacher issues and revokes coupons and directly grants access to organizat
   await expect(
     page.getByRole("button", { name: "Payment confirmed — grant access" }),
   ).toBeVisible();
+});
+
+test("catalog filters public courses and keeps locked courses out of My courses", async ({
+  page,
+}, testInfo) => {
+  const data = await fixture(page, "student");
+  data.courses.push(
+    paidCourse,
+    {
+      ...paidCourse,
+      id: "free-course",
+      title: "Creative thinking",
+      subject: "Design",
+      pricing: "free",
+    },
+    {
+      ...paidCourse,
+      id: "private-course",
+      title: "Private workshop",
+      visibility: "private",
+      pricing: "free",
+    },
+  );
+  data.lessons.push(lesson);
+  await signIn(page);
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Explore courses", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Explore courses", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Practical algebra", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Private workshop", exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath("catalog-desktop.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Free courses", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Creative thinking", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Practical algebra", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Paid courses", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Practical algebra", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Search catalog").fill("no such subject");
+  await expect(
+    page.getByRole("heading", { name: "No matching courses" }),
+  ).toBeVisible();
+  await page.getByLabel("Search catalog").fill("");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("catalog-mobile.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Practical algebra", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Creative thinking", exact: true }),
+  ).toBeVisible();
+});
+
+test("access option cards save course settings and fit a narrow screen", async ({
+  page,
+}, testInfo) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push({ ...paidCourse });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  await expect(
+    page.getByRole("radio", { name: "Public · Paid", exact: true }),
+  ).toBeChecked();
+  await page.screenshot({
+    path: testInfo.outputPath("access-desktop.png"),
+    fullPage: true,
+  });
+  await page.getByRole("radio", { name: "Public · Free", exact: true }).check();
+  await expect(page.getByLabel("Manual payment instructions")).toHaveCount(0);
+  await page.getByRole("button", { name: "Save access settings" }).click();
+  await expect.poll(() => data.courses[0].pricing).toBe("free");
+  await page.reload();
+  await expect(
+    page.getByRole("radio", { name: "Public · Free", exact: true }),
+  ).toBeChecked();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("radio", { name: "Public · Paid", exact: true }).check();
+  await expect(page.getByLabel("Manual payment instructions")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("access-mobile.png"),
+    fullPage: true,
+  });
 });

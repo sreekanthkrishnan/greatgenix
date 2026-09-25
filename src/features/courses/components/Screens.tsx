@@ -188,7 +188,13 @@ export function Dashboard() {
             )}
             <a
               className="button hero-button"
-              href={next ? `#/sessions/${next.id}` : "#/courses"}
+              href={
+                next
+                  ? `#/sessions/${next.id}`
+                  : teacher
+                    ? "#/courses"
+                    : "#/explore"
+              }
             >
               {teacher
                 ? next
@@ -347,7 +353,8 @@ export function SessionRow({ session }: { session: Session }) {
 
 export function Courses() {
   const { viewer } = useWorkspace();
-  const { courses, lessons, teacher } = useScope();
+  const { courses: visibleCourses, lessons, teacher } = useScope();
+  const courses = visibleCourses.filter((c) => hasCourseAccess(c, viewer));
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(false);
   const filtered = courses.filter((c) =>
@@ -364,11 +371,11 @@ export function Courses() {
           { value: lessons.length, label: "lessons" },
         ]}
         eyebrow={roleContent[viewer.role].coursesEyebrow.toUpperCase()}
-        title={teacher ? "Your courses" : "Explore courses"}
+        title="My courses"
         description={
           teacher
             ? roleContent[viewer.role].coursesDescription
-            : "Explore public courses in your organization and the private courses you’ve joined."
+            : "Continue learning in the courses you have access to. Find something new in Explore courses."
         }
         action={
           teacher && (
@@ -451,8 +458,11 @@ export function CourseDetail({ id }: { id: string }) {
 
   return (
     <>
-      <a className="back-link" href="#/courses">
-        ← All courses
+      <a
+        className="back-link"
+        href={hasCourseAccess(course, viewer) ? "#/courses" : "#/explore"}
+      >
+        {hasCourseAccess(course, viewer) ? "← My courses" : "← Explore courses"}
       </a>
       <PageHeading
         section="courses"

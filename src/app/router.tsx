@@ -1,3 +1,4 @@
+import { ExploreCourses } from "../features/courses/components/ExploreCourses";
 import { PlanManager } from "../features/billing/PlanManager";
 import { CouponManager } from "../features/billing/CouponManager";
 import { SubscriptionPage } from "../features/billing/SubscriptionPage";
@@ -68,6 +69,7 @@ export function Router({ platform }: { route?: string; platform: boolean }) {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/courses" element={<Courses />} />
+          <Route path="/explore" element={<ExploreCourses />} />
           <Route path="/courses/:id" element={<CourseDetailRoute />} />
           <Route path="/sessions" element={<SessionsRoute />} />
           <Route path="/sessions/:id" element={<SessionsRoute />} />
