@@ -40,7 +40,7 @@ export type Lesson = {
   title: string;
   duration: number;
   status: "draft" | "review" | "published";
-  age: string;
+
   subject: string;
   type?: LessonType;
   url?: string;
@@ -255,7 +255,7 @@ export function makeSeed(): DemoState {
         title: "Seeing patterns in linear equations",
         duration: 24,
         status: "published",
-        age: "13–15 years",
+
         subject: "Mathematics",
         type: "video",
         url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -268,10 +268,11 @@ export function makeSeed(): DemoState {
         title: "Two variables, one beautiful idea",
         duration: 18,
         status: "published",
-        age: "13–15 years",
+
         subject: "Mathematics",
         type: "notes",
-        content: "Linear equations with two variables form straight lines when graphed. Key concepts include slope (m), y-intercept (b), and finding the intersection of two lines.",
+        content:
+          "Linear equations with two variables form straight lines when graphed. Key concepts include slope (m), y-intercept (b), and finding the intersection of two lines.",
         completeBy: ["arjun"],
       },
       {
@@ -281,7 +282,7 @@ export function makeSeed(): DemoState {
         title: "The surprising life of a cell",
         duration: 21,
         status: "published",
-        age: "13–15 years",
+
         subject: "Science",
         type: "document",
         url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
@@ -294,7 +295,7 @@ export function makeSeed(): DemoState {
         title: "A story starts with a question",
         duration: 16,
         status: "published",
-        age: "13–15 years",
+
         subject: "English",
         type: "link",
         url: "https://en.wikipedia.org/wiki/Storytelling",
@@ -307,7 +308,7 @@ export function makeSeed(): DemoState {
         title: "Energy in everyday motion",
         duration: 28,
         status: "review",
-        age: "13–15 years",
+
         subject: "Science",
         type: "audio",
         url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
@@ -320,7 +321,7 @@ export function makeSeed(): DemoState {
         title: "Looking for number patterns",
         duration: 20,
         status: "published",
-        age: "12–14 years",
+
         subject: "Mathematics",
         type: "video",
         url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",

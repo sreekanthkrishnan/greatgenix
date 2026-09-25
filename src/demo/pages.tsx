@@ -13,7 +13,6 @@ import {
   Play,
   Plus,
   Search,
-  ShieldCheck,
   Sparkles,
   Upload,
   Users,
@@ -499,7 +498,7 @@ export function CourseDetail({ id }: { id: string }) {
                   <div>
                     <strong>{l.title}</strong>
                     <span>
-                      {l.duration} min · {l.age} ·{" "}
+                      {l.duration} min ·{" "}
                       {l.status === "published"
                         ? "Teacher-approved"
                         : "Not visible to students"}
@@ -776,7 +775,7 @@ export function Recordings({ id }: { id?: string }) {
         <PageHeading
           eyebrow={`${course.subject.toUpperCase()} / ${course.grade.toUpperCase()}`}
           title={lesson.title}
-          description={`${lesson.duration} minutes · ${lesson.age} · ${course.batch}`}
+          description={`${lesson.duration} minutes · ${course.batch}`}
         />
         <div className="lesson-layout">
           <section>
@@ -820,13 +819,9 @@ export function Recordings({ id }: { id?: string }) {
             </h3>
             <p>
               {teacher
-                ? "Check curriculum relevance, intended age and subject before making content available to learners."
+                ? "Check curriculum relevance and subject before making content available to learners."
                 : "Take your time. Revisit the ideas, then mark your progress in the local demo."}
             </p>
-            <div className="detail-row">
-              <ShieldCheck size={17} />
-              {lesson.age}
-            </div>
             <div className="detail-row">
               <BookOpen size={17} />
               {lesson.subject}
@@ -864,8 +859,8 @@ export function Recordings({ id }: { id?: string }) {
                         checked={reviewed}
                         onChange={(e) => setReviewed(e.target.checked)}
                       />
-                      Simulate teacher approval of this lesson’s age, subject
-                      and curriculum suitability.
+                      Simulate teacher approval of this lesson’s subject and
+                      curriculum suitability.
                     </label>
                     <Button
                       disabled={!reviewed}
@@ -938,9 +933,7 @@ export function Recordings({ id }: { id?: string }) {
   }
   const filtered = lessons.filter(
     (l) =>
-      `${l.title} ${l.subject} ${l.age}`
-        .toLowerCase()
-        .includes(search.toLowerCase()) &&
+      `${l.title} ${l.subject}`.toLowerCase().includes(search.toLowerCase()) &&
       (filter === "all" || l.status === filter),
   );
   return (
@@ -967,7 +960,7 @@ export function Recordings({ id }: { id?: string }) {
           <Search size={17} />
           <input
             aria-label="Search approved library"
-            placeholder="Search lessons, subjects or ages…"
+            placeholder="Search lessons or subjects…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -1011,9 +1004,7 @@ export function Recordings({ id }: { id?: string }) {
                   </Badge>
                 </div>
                 <h3>{l.title}</h3>
-                <p>
-                  {course.grade} · {l.age}
-                </p>
+                <p>{course.grade}</p>
               </div>
             </a>
           );

@@ -79,7 +79,7 @@ export type Lesson = {
   status: "draft" | "review" | "published";
   mediaStatus?: string;
   references?: LessonReference[];
-  age: string;
+
   subject: string;
   type?: LessonType;
   url?: string;

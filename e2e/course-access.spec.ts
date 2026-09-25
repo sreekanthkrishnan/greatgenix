@@ -93,6 +93,8 @@ test("teacher creates a paid public course and marks a lesson as a free preview"
     .filter({ has: page.getByRole("heading", { name: "Practical algebra" }) })
     .click();
   await page.getByRole("button", { name: "Add recording" }).click();
+  await expect(page.getByLabel("Course / batch")).toHaveCount(0);
+  await expect(page.getByLabel("Intended age")).toHaveCount(0);
   await page.getByLabel("Title / name").fill("First look");
   await page.getByLabel("Material type").selectOption("notes");
   await page
@@ -102,6 +104,8 @@ test("teacher creates a paid public course and marks a lesson as a free preview"
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByRole("heading", { name: "First look" })).toBeVisible();
   expect(data.lessons[0].isFreePreview).toBe(true);
+  expect(data.lessons[0].courseId).toBe(data.courses[0].id);
+  expect(data.lessons[0]).not.toHaveProperty("age");
   await page.getByLabel("Free preview in paid public courses").click();
   await expect(
     page.getByLabel("Free preview in paid public courses"),
@@ -641,4 +645,51 @@ test("students cannot open the course editor", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Course editing unavailable" }),
   ).toBeVisible();
+});
+
+test("Add a lesson detects its course and removes legacy age from lesson views", async ({
+  page,
+}) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push(
+    { ...paidCourse, id: "first-course", title: "Other course" },
+    { ...paidCourse },
+  );
+  data.lessons.push({ ...lesson, age: "13–15 years" });
+  await signIn(page);
+  await page.goto(`/#/courses/${courseId}`);
+  await expect(page.getByText(/13–15 years/)).toHaveCount(0);
+  await page.getByRole("button", { name: "Add recording" }).click();
+  await expect(page.getByLabel("Course / batch")).toHaveCount(0);
+  await expect(page.getByLabel("Intended age")).toHaveCount(0);
+  await page.getByLabel("Title / name").fill("Contextual lesson");
+  await page.getByLabel("Material type").selectOption("notes");
+  await page.getByLabel("Lesson Notes & Content").fill("Course-specific notes");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Contextual lesson" }),
+  ).toBeVisible();
+  expect(data.lessons[1].courseId).toBe(courseId);
+  expect(data.lessons[1]).not.toHaveProperty("age");
+  await page.goto(`/#/recordings/${lesson.id}`);
+  await expect(page.getByText(/13–15 years/)).toHaveCount(0);
+});
+
+test("global lesson creation automatically uses the only available course", async ({
+  page,
+}) => {
+  const data = await fixture(page, "teacher");
+  data.courses.push({ ...paidCourse });
+  await signIn(page);
+  await page.goto("/#/recordings");
+  await page.getByRole("button", { name: "Add a lesson", exact: true }).click();
+  await expect(page.getByLabel("Course / batch")).toHaveCount(0);
+  await page.getByLabel("Title / name").fill("Library lesson");
+  await page.getByRole("dialog").getByLabel("Material type").selectOption("notes");
+  await page.getByLabel("Lesson Notes & Content").fill("Library notes");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Library lesson" }),
+  ).toBeVisible();
+  expect(data.lessons[0].courseId).toBe(courseId);
 });

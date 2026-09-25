@@ -27,6 +27,8 @@ export function ActionForm({
 }) {
   const { state, viewer, act } = useDemo();
   const courses = state.courses.filter((c) => canSeeCourse(c, viewer));
+  const detectedCourseId =
+    courseId || (courses.length === 1 ? courses[0].id : undefined);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const needsCourse = ["session", "recording", "member"].includes(kind);
@@ -85,12 +87,13 @@ export function ActionForm({
             lesson: {
               id,
               orgId: viewer.orgId,
-              courseId: value("course"),
+              courseId: detectedCourseId || value("course"),
               title: value("title"),
               duration: Number(value("duration")),
               subject:
-                courses.find((c) => c.id === value("course"))?.subject || "",
-              age: value("age"),
+                courses.find(
+                  (c) => c.id === (detectedCourseId || value("course")),
+                )?.subject || "",
               status: "draft",
               fileName,
               completeBy: [],
@@ -185,7 +188,7 @@ export function ActionForm({
               />
             </Field>
           )}
-          {needsCourse && (
+          {needsCourse && !(kind === "recording" && detectedCourseId) && (
             <Field label="Course / batch">
               <select name="course" defaultValue={courseId || courses[0]?.id}>
                 {courses.map((c) => (
@@ -274,13 +277,6 @@ export function ActionForm({
           {kind === "recording" && (
             <>
               <div className="form-row">
-                <Field label="Intended age">
-                  <select name="age">
-                    <option>13–15 years</option>
-                    <option>11–13 years</option>
-                    <option>15–18 years</option>
-                  </select>
-                </Field>
                 <Field label="Duration in minutes">
                   <input
                     type="number"

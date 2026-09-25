@@ -1088,3 +1088,10 @@ test('course thumbnails accept 2 MB and reject larger decoded images', async () 
   expect((await db.query('select length("thumbnailUrl") as length from public.courses where id=$1',[course])).rows[0].length).toBe(thumbnailUrl.length);
   await denied(() => act({type:'course-access',id:course,visibility:'private',pricing:'free',thumbnailUrl:'data:image/png;base64,' + Buffer.alloc(2_000_001).toString('base64')}), /course_thumbnail_valid/);
 });
+
+
+test('lessons can be created without the removed intended age field', async () => {
+  await as(teacher);
+  await act({type:'lesson',lesson:{id:id(97),orgId:org,courseId:course,title:'Without age',duration:15,subject:'Math',type:'notes',content:'Learning notes',status:'draft'}});
+  expect((await db.query('select "courseId",age from public.lessons where id=$1',[id(97)])).rows[0]).toEqual({courseId:course,age:null});
+});

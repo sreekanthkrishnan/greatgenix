@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Plus,
   Search,
-  ShieldCheck,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -80,7 +79,7 @@ export function Recordings({ id }: { id?: string }) {
           eyebrow={`${course.subject.toUpperCase()} / ${course.grade.toUpperCase()}`}
           artwork={<LessonArtwork type={lesson.type || "video"} />}
           title={lesson.title}
-          description={`${lesson.duration} minutes · ${lesson.age} · ${course.batch}`}
+          description={`${lesson.duration} minutes · ${course.batch}`}
         />
         <div className="lesson-layout">
           <section>
@@ -126,10 +125,6 @@ export function Recordings({ id }: { id?: string }) {
                 : "Mark this lesson complete when you’re ready."}
             </p>
             <div className="detail-row">
-              <ShieldCheck size={17} />
-              {lesson.age}
-            </div>
-            <div className="detail-row">
               <BookOpen size={17} />
               {lesson.subject}
             </div>
@@ -170,8 +165,8 @@ export function Recordings({ id }: { id?: string }) {
                         checked={reviewed}
                         onChange={(e) => setReviewed(e.target.checked)}
                       />
-                      I confirm approval of this lesson’s age, subject and
-                      curriculum suitability.
+                      I confirm approval of this lesson’s subject and curriculum
+                      suitability.
                     </label>
                     <Button
                       disabled={!reviewed || busy}
@@ -279,9 +274,7 @@ export function Recordings({ id }: { id?: string }) {
   const publishedCount = lessons.filter((l) => l.status === "published").length;
   const filtered = lessons.filter(
     (l) =>
-      `${l.title} ${l.subject} ${l.age}`
-        .toLowerCase()
-        .includes(search.toLowerCase()) &&
+      `${l.title} ${l.subject}`.toLowerCase().includes(search.toLowerCase()) &&
       (filter === "all" || l.status === filter) &&
       (material === "all" || (l.type || "video") === material) &&
       (teacher ||
@@ -326,7 +319,7 @@ export function Recordings({ id }: { id?: string }) {
           <Search size={17} />
           <input
             aria-label="Search lessons"
-            placeholder="Search lessons, subjects or ages…"
+            placeholder="Search lessons or subjects…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

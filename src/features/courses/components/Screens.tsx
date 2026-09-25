@@ -569,7 +569,7 @@ export function CourseDetail({ id }: { id: string }) {
                     <strong>{l.title}</strong>
                     <span>
                       {l.isFreePreview ? "Free preview · " : ""}
-                      {l.duration} min · {l.age} ·{" "}
+                      {l.duration} min ·{" "}
                       {l.status === "published"
                         ? "Teacher-approved"
                         : "Not visible to students"}

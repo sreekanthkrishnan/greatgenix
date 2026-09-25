@@ -47,7 +47,7 @@ Feature change: authorized actor selects organization features → system applie
 
 The confirmed goal is private, age-appropriate educational content, preventing explicit or unrelated results. Recommend a curated, teacher-approved library and search limited to approved content for the student's organization, enrollment and age/grade/subject. Do not include open-web search in the MVP.
 
-Capture subject, curriculum/grade, intended age range, content owner, review status and publication status. Require review before publishing; provide reporting, temporary withdrawal, review reasons and an audit trail. Authority to review/publish and handling urgent reports need definition. Automated checks may assist reviewers, but cannot guarantee perfect filtering.
+Capture subject, curriculum/grade, content owner, review status and publication status. Require review before publishing; provide reporting, temporary withdrawal, review reasons and an audit trail. Authority to review/publish and handling urgent reports need definition. Automated checks may assist reviewers, but cannot guarantee perfect filtering.
 
 Context matters: legitimate, age-appropriate biology and reproductive-health curriculum must not be blanket-blocked as explicit content. Assess educational purpose and audience suitability through review. For live sessions, include host moderation and a reporting route; prerecorded-content review cannot prevent every live incident.
 

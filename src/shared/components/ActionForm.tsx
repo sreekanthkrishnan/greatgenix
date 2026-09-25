@@ -58,6 +58,8 @@ export function ActionForm({
     reader.readAsDataURL(file);
   }
   const courses = state.courses.filter((c) => canSeeCourse(c, viewer));
+  const detectedCourseId =
+    courseId || (courses.length === 1 ? courses[0].id : undefined);
   if (kind === "member")
     return <InviteForm close={close} courseId={courseId} />;
   const titles = {
@@ -141,12 +143,13 @@ export function ActionForm({
               lesson: {
                 id,
                 orgId: viewer.orgId,
-                courseId: value("course"),
+                courseId: detectedCourseId || value("course"),
                 title: value("title"),
                 duration: Number(value("duration")),
                 subject:
-                  courses.find((c) => c.id === value("course"))?.subject || "",
-                age: value("age"),
+                  courses.find(
+                    (c) => c.id === (detectedCourseId || value("course")),
+                  )?.subject || "",
                 status: "published",
                 type,
                 url,
@@ -202,21 +205,22 @@ export function ActionForm({
             <input name="title" required maxLength={80} autoFocus />
           </Field>
         )}
-        {["session", "recording", "assignment"].includes(kind) && (
-          <Field label="Course / batch">
-            <select
-              name="course"
-              required
-              defaultValue={courseId || courses[0]?.id}
-            >
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {[c.title, c.batch].filter(Boolean).join(" · ")}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
+        {["session", "recording", "assignment"].includes(kind) &&
+          !(kind === "recording" && detectedCourseId) && (
+            <Field label="Course / batch">
+              <select
+                name="course"
+                required
+                defaultValue={courseId || courses[0]?.id}
+              >
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {[c.title, c.batch].filter(Boolean).join(" · ")}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
         {kind === "course" && (
           <>
             <CourseMetadataFields />
@@ -367,13 +371,6 @@ export function ActionForm({
                 />
               </Field>
             )}
-            <Field label="Intended age">
-              <select name="age">
-                <option>13–15 years</option>
-                <option>11–13 years</option>
-                <option>15–18 years</option>
-              </select>
-            </Field>
             <Field label="Estimated duration (minutes)">
               <input
                 name="duration"
