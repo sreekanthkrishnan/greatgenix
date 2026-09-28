@@ -9,9 +9,14 @@ import type {
   WorkspaceState,
 } from "./index";
 export type DatabaseRows = {
-  courses: Omit<Course, "studentIds">;
+  courses: Omit<Course, "studentIds" | "directStudentIds" | "effectiveAccess">;
   memberships: Omit<Member, "id" | "initials"> & { userId: string };
-  enrollments: { orgId: string; courseId: string; studentId: string };
+  enrollments: {
+    orgId: string;
+    courseId: string;
+    studentId: string;
+    source?: "direct" | "self";
+  };
   lessons: Omit<Lesson, "completeBy">;
   sessions: Session;
   assignments: Assignment;

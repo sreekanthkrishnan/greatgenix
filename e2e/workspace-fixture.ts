@@ -88,6 +88,10 @@ export async function fixture(
     }
     if (url.pathname.includes("/rpc/")) {
       const name = url.pathname.split("/").pop();
+      if (name === "learning_outline")
+        return route.fulfill({
+          json: { access: true, enrolled: false, modules: [] },
+        });
       if (name === "my_access")
         return route.fulfill({
           json: accessData,

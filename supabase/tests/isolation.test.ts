@@ -1095,3 +1095,609 @@ test('lessons can be created without the removed intended age field', async () =
   await act({type:'lesson',lesson:{id:id(97),orgId:org,courseId:course,title:'Without age',duration:15,subject:'Math',type:'notes',content:'Learning notes',status:'draft'}});
   expect((await db.query('select "courseId",age from public.lessons where id=$1',[id(97)])).rows[0]).toEqual({courseId:course,age:null});
 });
+
+// Sequential learning integration tests exercise the same RLS and RPC boundaries as production.
+const pathModule = id(900),
+  nextModule = id(901),
+  noteItem = id(910),
+  assessmentItem = id(911),
+  workshopItem = id(912),
+  practiceItem = id(913),
+  videoItem = id(914),
+  videoLesson = id(915),
+  documentItem = id(916),
+  documentLesson = id(917);
+async function seedPath(
+  options: { video?: boolean; duration?: number; activate?: boolean } = {},
+) {
+  await db.exec("reset role");
+  await db.query(
+    `update public.lessons set type='notes',content='Protected notes',status='published' where id=$1`,
+    [lesson],
+  );
+  await db.query(
+    `insert into public.lessons(id,"orgId","courseId",title,duration,subject,status,type,url) values($1,$2,$3,'Video',2,'Math','published','video','https://example.com/lesson.mp4'),($4,$2,$3,'Reading',1,'Math','published','document','https://example.com/reading.pdf')`,
+    [videoLesson, org, course, documentLesson],
+  );
+  const modules = [
+    {
+      id: pathModule,
+      title: "Foundations",
+      items: [
+        { id: noteItem, title: "Notes", kind: "notes", lessonId: lesson },
+        ...(options.video
+          ? [
+              {
+                id: videoItem,
+                title: "Watch",
+                kind: "video",
+                lessonId: videoLesson,
+                duration_seconds: options.duration ?? 120,
+              },
+            ]
+          : []),
+        {
+          id: assessmentItem,
+          title: "Assessment",
+          kind: "assessment",
+          assignmentId: assignment,
+        },
+      ],
+    },
+    {
+      id: nextModule,
+      title: "Apply it",
+      items: [
+        {
+          id: documentItem,
+          title: "Reading",
+          kind: "document",
+          lessonId: documentLesson,
+        },
+        {
+          id: workshopItem,
+          title: "Workshop",
+          kind: "workshop",
+          sessionId: session,
+          content: "Protected workshop instructions",
+        },
+        {
+          id: practiceItem,
+          title: "Practice",
+          kind: "practice",
+          content: "Protected practice instructions",
+        },
+      ],
+    },
+  ];
+  await as(teacher);
+  await rpc("save_learning_structure", [
+    org,
+    course,
+    JSON.stringify(modules),
+    options.activate ?? true,
+  ]);
+  return modules;
+}
+async function deny(operation: () => Promise<unknown>) {
+  await db.exec("savepoint forbidden_learning");
+  await expect(operation()).rejects.toThrow();
+  await db.exec("rollback to savepoint forbidden_learning");
+}
+async function outline() {
+  return (await rpc("learning_outline", [org, course])).rows[0].result as any;
+}
+async function completeNotesAndAssessment() {
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  await act({
+    type: "submit",
+    id: assignment,
+    answer: "Submitted without grading",
+  });
+}
+test("sequential outline reveals titles but RLS and direct RPCs hide locked content at both levels", async () => {
+  await seedPath({ video: true });
+  await as(student);
+  const path = await outline();
+  expect(path.modules[0].items.map((i: any) => i.state)).toEqual([
+    "available",
+    "locked",
+    "locked",
+  ]);
+  expect(path.modules[1].items.every((i: any) => i.state === "locked")).toBe(
+    true,
+  );
+  expect(JSON.stringify(path)).not.toContain("Protected");
+  expect((await db.query("select id from public.lessons")).rows).toEqual([
+    { id: lesson },
+  ]);
+  expect((await db.query("select id from public.assignments")).rows).toEqual(
+    [],
+  );
+  expect((await db.query("select id from public.sessions")).rows).toEqual([]);
+  await deny(() => rpc("learning_item", [org, videoItem]));
+  await deny(() => rpc("complete_learning_item", [org, documentItem]));
+  await deny(() => rpc("media_access", [videoLesson, "playback"]));
+  await deny(() => rpc("media_access", [session, "join"]));
+  await deny(() => act({ type: "submit", id: assignment, answer: "Bypass" }));
+  await deny(() => db.query("select * from private.learning_progress"));
+  await deny(() =>
+    rpc("apply_action_before_sequence", [
+      org,
+      JSON.stringify({ type: "complete", id: lesson }),
+    ]),
+  );
+});
+test("submission unlocks the next module before grading; zero marks do not block and completion persists", async () => {
+  await seedPath();
+  await completeNotesAndAssessment();
+  let path = await outline();
+  expect(path.modules[0].items.every((i: any) => i.completed)).toBe(true);
+  expect(path.modules[1].items[0].state).toBe("available");
+  const submission = (
+    await db.query(
+      'select id,published from public.submissions where "assignmentId"=$1',
+      [assignment],
+    )
+  ).rows[0];
+  expect(submission.published).toBe(false);
+  await as(teacher);
+  await act({
+    type: "grade",
+    id: submission.id,
+    score: 0,
+    feedback: "Review this again",
+  });
+  await as(student);
+  await rpc("complete_learning_item", [org, documentItem]);
+  await rpc("complete_learning_item", [org, documentItem]);
+  await as(teacher);
+  await rpc("record_learning_participation", [org, workshopItem, student]);
+  await rpc("record_learning_participation", [
+    org,
+    practiceItem,
+    student,
+    0,
+    "Participation recorded",
+  ]);
+  await as(student);
+  path = await outline();
+  expect(
+    path.modules.flatMap((m: any) => m.items).every((i: any) => i.completed),
+  ).toBe(true);
+  expect(
+    (await rpc("learning_item", [org, noteItem])).rows[0].result,
+  ).toBeTruthy();
+  await as(otherStudent);
+  await deny(() => rpc("learning_item", [org, noteItem]));
+  await as(student);
+  expect((await outline()).modules[1].items[2].completed).toBe(true);
+});
+test("students cannot self-record participation and teachers cannot advance a locked workshop", async () => {
+  await seedPath();
+  await as(student);
+  await deny(() =>
+    rpc("record_learning_participation", [org, workshopItem, student]),
+  );
+  await deny(() => rpc("complete_learning_item", [org, practiceItem]));
+  await as(teacher);
+  await deny(() =>
+    rpc("record_learning_participation", [org, workshopItem, student]),
+  );
+});
+test("present and late attendance unlock reachable workshops independently of marks", async () => {
+  await seedPath();
+  await completeNotesAndAssessment();
+  await rpc("complete_learning_item", [org, documentItem]);
+  await as(teacher);
+  await act({
+    type: "attendance",
+    sessionId: session,
+    values: { [student]: "present" },
+  });
+  await as(student);
+  expect((await outline()).modules[1].items[2].state).toBe("available");
+});
+test("free sequential courses require explicit enrollment before even the first resource", async () => {
+  await seedPath();
+  await as(teacher);
+  await act({
+    type: "course-access",
+    id: course,
+    visibility: "public",
+    pricing: "free",
+  });
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: false,
+  });
+  await as(student);
+  expect((await db.query("select id from public.courses")).rows).toContainEqual(
+    { id: course },
+  );
+  expect((await db.query("select id from public.lessons")).rows).toEqual([]);
+  expect((await outline()).enrolled).toBe(false);
+  await deny(() => rpc("learning_item", [org, noteItem]));
+  await rpc("enroll_learning_course", [org, course]);
+  await rpc("enroll_learning_course", [org, course]);
+  expect((await outline()).modules[0].items[0].state).toBe("available");
+});
+test("private paths reject public enrollment and unrelated teachers", async () => {
+  await seedPath();
+  await as(otherAdmin);
+  await deny(() => rpc("learning_outline", [org, course]));
+  await deny(() => rpc("save_learning_structure", [org, course, "[]", true]));
+  await as(student);
+  await deny(() => rpc("enroll_learning_course", [org, course]));
+});
+test("student subscription expiry removes subscription access, retains progress and never grants private courses", async () => {
+  await seedPath();
+  await as(teacher);
+  await act({
+    type: "course-access",
+    id: course,
+    visibility: "public",
+    pricing: "paid",
+    coursePrice: 100,
+  });
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: false,
+  });
+  await as(admin);
+  await rpc("save_student_subscription", [
+    org,
+    student,
+    new Date(Date.now() + 86400000).toISOString(),
+    "Paid offline",
+  ]);
+  await as(student);
+  expect((await outline()).access).toBe(true);
+  await deny(() => rpc("learning_item", [org, noteItem]));
+  await rpc("enroll_learning_course", [org, course]);
+  await rpc("complete_learning_item", [org, noteItem]);
+  await db.exec("reset role");
+  await db.exec(
+    "update private.student_subscriptions set starts_at=now()-interval '2 days',ends_at=now()-interval '1 day'",
+  );
+  await as(student);
+  expect((await outline()).access).toBe(false);
+  expect((await outline()).modules[0].items[0].completed).toBe(true);
+  expect((await db.query("select id from public.lessons")).rows).toEqual([]);
+  await deny(() => rpc("learning_item", [org, noteItem]));
+  await as(teacher);
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: true,
+  });
+  await as(student);
+  expect((await outline()).access).toBe(true);
+  expect((await outline()).modules[0].items[1].state).toBe("available");
+  await as(teacher);
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: false,
+  });
+  await act({
+    type: "course-access",
+    id: course,
+    visibility: "private",
+    pricing: "free",
+  });
+  await as(admin);
+  await rpc("save_student_subscription", [
+    org,
+    student,
+    new Date(Date.now() + 86400000).toISOString(),
+    "Renewed",
+  ]);
+  await as(student);
+  await deny(() => rpc("learning_outline", [org, course]));
+});
+test("subscription administration requires organization admin and coupon purchase survives expiry", async () => {
+  await seedPath();
+  await as(teacher);
+  await act({
+    type: "course-access",
+    id: course,
+    visibility: "public",
+    pricing: "paid",
+    coursePrice: 100,
+  });
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: false,
+  });
+  await deny(() =>
+    rpc("save_student_subscription", [
+      org,
+      student,
+      new Date(Date.now() + 86400000).toISOString(),
+      "Not administrator",
+    ]),
+  );
+  await as(admin);
+  await rpc("save_student_subscription", [
+    org,
+    student,
+    new Date(Date.now() + 86400000).toISOString(),
+    "Verified",
+  ]);
+  await as(student);
+  await rpc("enroll_learning_course", [org, course]);
+  await as(teacher);
+  const coupon = (
+    await rpc("create_course_access_coupon", [org, course, student])
+  ).rows[0].result;
+  await as(student);
+  await rpc("redeem_course_access_coupon", [org, course, coupon]);
+  await as(admin);
+  const records = (await rpc("student_subscription_records", [org])).rows[0]
+    .result as any[];
+  await rpc("save_student_subscription", [org, null, null, "", records[0].id]);
+  await as(student);
+  expect((await outline()).access).toBe(true);
+});
+test("draft paths preserve legacy access and activation imports historical completion and submission", async () => {
+  await seedPath({ activate: false });
+  await as(student);
+  expect(
+    (await db.query("select id from public.assignments")).rows,
+  ).toContainEqual({ id: assignment });
+  await act({ type: "complete", id: lesson });
+  await act({
+    type: "submit",
+    id: assignment,
+    answer: "Historical submission",
+  });
+  await as(teacher);
+  const path = await outline();
+  await rpc("save_learning_structure", [
+    org,
+    course,
+    JSON.stringify(path.modules),
+    true,
+  ]);
+  await as(student);
+  const activated = await outline();
+  expect(activated.modules[0].items.every((i: any) => i.completed)).toBe(true);
+  expect(activated.modules[1].items[0].state).toBe("available");
+});
+test("reordering preserves completed review and rejects removal or identity changes of progressed items", async () => {
+  const modules = await seedPath();
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  await as(teacher);
+  const reordered = [modules[1], modules[0]];
+  await rpc("save_learning_structure", [
+    org,
+    course,
+    JSON.stringify(reordered),
+    true,
+  ]);
+  await as(student);
+  expect(
+    (await rpc("learning_item", [org, noteItem])).rows[0].result,
+  ).toBeTruthy();
+  expect((await outline()).modules[0].items[0].state).toBe("available");
+  await as(teacher);
+  await deny(() =>
+    rpc("save_learning_structure", [
+      org,
+      course,
+      JSON.stringify([modules[1]]),
+      true,
+    ]),
+  );
+  await deny(() => act({ type: "lesson-status", id: lesson, status: "draft" }));
+});
+async function playbackTick(
+  token: unknown,
+  sequence: number,
+  position: number,
+  active = true,
+  elapsed = 1,
+) {
+  await db.exec("reset role");
+  await db.query(
+    `update private.playback_sessions set last_at=clock_timestamp()-($1::text||' seconds')::interval where "itemId"=$2 and "studentId"=$3`,
+    [elapsed, videoItem, student],
+  );
+  await as(student);
+  return (
+    await rpc("learning_playback_tick", [
+      org,
+      videoItem,
+      token,
+      sequence,
+      position,
+      active,
+    ])
+  ).rows[0].result as { watched: number; eligible: boolean };
+}
+test("60 active seconds enables explicit video completion but does not automatically complete", async () => {
+  await seedPath({ video: true });
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  const token = (await rpc("start_learning_playback", [org, videoItem])).rows[0]
+    .result;
+  await playbackTick(token, 1, 0, true);
+  for (let i = 1; i <= 59; i++) await playbackTick(token, i + 1, i, true);
+  await deny(() => rpc("complete_learning_item", [org, videoItem]));
+  expect((await outline()).modules[0].items[1].completed).toBe(false);
+  const credit = await playbackTick(token, 61, 60, true);
+  expect(credit.eligible).toBe(true);
+  expect((await outline()).modules[0].items[1].completed).toBe(false);
+  await rpc("complete_learning_item", [org, videoItem]);
+  expect((await outline()).modules[0].items[2].state).toBe("available");
+});
+test("video play-only, paused, seeking jumps, stale ticks and replay cannot earn playback credit", async () => {
+  await seedPath({ video: true });
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  const token = (await rpc("start_learning_playback", [org, videoItem])).rows[0]
+    .result;
+  expect((await playbackTick(token, 1, 0)).watched).toBe(0);
+  expect((await playbackTick(token, 2, 0)).watched).toBe(0);
+  expect((await playbackTick(token, 3, 50)).watched).toBe(0);
+  expect((await playbackTick(token, 4, 51, false)).watched).toBe(0);
+  expect((await playbackTick(token, 5, 52)).watched).toBe(0);
+  expect((await playbackTick(token, 6, 53, true, 10)).watched).toBe(0);
+  await deny(() =>
+    rpc("learning_playback_tick", [org, videoItem, token, 6, 54, true]),
+  );
+  await deny(() => act({ type: "complete", id: videoLesson }));
+  const replacement = (await rpc("start_learning_playback", [org, videoItem]))
+    .rows[0].result;
+  expect(replacement).not.toBe(token);
+  await deny(() =>
+    rpc("learning_playback_tick", [org, videoItem, token, 7, 55, true]),
+  );
+});
+test("short videos require full contiguous playback and survive reopening", async () => {
+  await seedPath({ video: true, duration: 3 });
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  const token = (await rpc("start_learning_playback", [org, videoItem])).rows[0]
+    .result;
+  await playbackTick(token, 1, 0);
+  await playbackTick(token, 2, 1);
+  expect((await playbackTick(token, 3, 2)).eligible).toBe(false);
+  await deny(() => rpc("complete_learning_item", [org, videoItem]));
+  expect((await playbackTick(token, 4, 3)).eligible).toBe(true);
+  await rpc("start_learning_playback", [org, videoItem]);
+  await rpc("complete_learning_item", [org, videoItem]);
+  expect((await outline()).modules[0].items[1].completed).toBe(true);
+});
+
+test("progress is independent for two students enrolled in the same course", async () => {
+  await seedPath();
+  await db.exec("reset role");
+  await db.query(
+    `insert into public.memberships("orgId","userId",name,email,role) values($1,$2,'Second learner','second@example.com','student')`,
+    [org, invitee],
+  );
+  await as(teacher);
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: invitee,
+    enrolled: true,
+  });
+  await completeNotesAndAssessment();
+  await as(invitee);
+  const path = await outline();
+  expect(path.modules[0].items.map((i: any) => i.state)).toEqual([
+    "available",
+    "locked",
+  ]);
+  await deny(() =>
+    act({
+      type: "submit",
+      id: assignment,
+      answer: "Other learner has finished",
+    }),
+  );
+});
+test("an unrelated teacher in the same organization cannot inspect or edit a private learning path", async () => {
+  await seedPath();
+  await db.exec("reset role");
+  await db.query(
+    `insert into public.memberships("orgId","userId",name,email,role) values($1,$2,'Unrelated teacher','unrelated@example.com','teacher')`,
+    [org, otherAdmin],
+  );
+  await as(otherAdmin);
+  await deny(() => rpc("learning_outline", [org, course]));
+  await deny(() => rpc("learning_roster", [org, course]));
+  await deny(() =>
+    rpc("record_learning_participation", [org, workshopItem, student]),
+  );
+});
+test("repeated partial playback cannot complete a short video without covering the entire video", async () => {
+  await seedPath({ video: true, duration: 4 });
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  const token = (await rpc("start_learning_playback", [org, videoItem])).rows[0]
+    .result;
+  await playbackTick(token, 1, 0);
+  await playbackTick(token, 2, 1);
+  await playbackTick(token, 3, 2);
+  await playbackTick(token, 4, 0, false);
+  await playbackTick(token, 5, 0);
+  await playbackTick(token, 6, 1);
+  const result = await playbackTick(token, 7, 2);
+  expect(Number(result.watched)).toBe(4);
+  expect(result.eligible).toBe(false);
+  await deny(() => rpc("complete_learning_item", [org, videoItem]));
+  await playbackTick(token, 8, 3);
+  expect((await playbackTick(token, 9, 4)).eligible).toBe(true);
+  expect((await playbackTick(token, 10, 4, false)).eligible).toBe(true);
+});
+test("student entitlement changes preserve course progress but reject new completion without access", async () => {
+  await seedPath();
+  await as(student);
+  await rpc("complete_learning_item", [org, noteItem]);
+  await as(teacher);
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: false,
+  });
+  await as(student);
+  await deny(() => rpc("learning_item", [org, noteItem]));
+  await deny(() =>
+    act({ type: "submit", id: assignment, answer: "Revoked access" }),
+  );
+  await as(teacher);
+  await act({
+    type: "enroll",
+    courseId: course,
+    studentId: student,
+    enrolled: true,
+  });
+  await as(student);
+  expect((await outline()).modules[0].items[1].state).toBe("available");
+});
+test("empty modules are rejected without activating a legacy course", async () => {
+  await seedPath({ activate: false });
+  await as(teacher);
+  await deny(() =>
+    rpc("save_learning_structure", [
+      org,
+      course,
+      JSON.stringify([{ id: pathModule, title: "Empty", items: [] }]),
+      true,
+    ]),
+  );
+  expect(
+    (
+      await db.query("select sequential from public.courses where id=$1", [
+        course,
+      ])
+    ).rows[0].sequential,
+  ).toBe(false);
+});
+
+test('playback recovers network timing jitter and flushes played time before a pause without counting the pause', async()=>{
+ await seedPath({video:true,duration:3});await as(student);await rpc('complete_learning_item',[org,noteItem]);const token=(await rpc('start_learning_playback',[org,videoItem])).rows[0].result;
+ await playbackTick(token,1,0);await playbackTick(token,2,1,true,0.8);const recovered=await playbackTick(token,3,2,true,1.2);expect(Number(recovered.watched)).toBeGreaterThanOrEqual(1.99);
+ await db.exec('reset role');await db.query(`update private.playback_sessions set last_at=clock_timestamp()-interval '1 second' where "itemId"=$1`,[videoItem]);await as(student);
+ const final=(await rpc('learning_playback_tick',[org,videoItem,token,4,3,false,true])).rows[0].result as any;expect(final.eligible).toBe(true);expect((await playbackTick(token,5,3,false,10)).watched).toBe(3);
+});
+
+test('teachers can correct video duration after playback starts without discarding earned progress',async()=>{
+ const modules=await seedPath({video:true,duration:120});await as(student);await rpc('complete_learning_item',[org,noteItem]);const token=(await rpc('start_learning_playback',[org,videoItem])).rows[0].result;await playbackTick(token,1,0);await playbackTick(token,2,1);
+ await as(teacher);(modules[0].items.find(i=>i.id===videoItem) as any).duration_seconds=3;await rpc('save_learning_structure',[org,course,JSON.stringify(modules),true]);await as(student);const path=await outline();expect(path.modules[0].items[1].required).toBe(3);expect(Number(path.modules[0].items[1].watched)).toBe(1);expect(path.modules[0].items[0].completed).toBe(true);
+});

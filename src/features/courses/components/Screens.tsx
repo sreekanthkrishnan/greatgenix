@@ -1,3 +1,5 @@
+import { CourseLearning } from "../learning/CourseLearning";
+import { StudentSubscriptions } from "../learning/StudentSubscriptions";
 import { CoursePrice } from "../../../shared/components/CoursePrice";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import { profileText } from "../../../shared/utils/roleContent";
@@ -513,7 +515,11 @@ export function CourseDetail({ id }: { id: string }) {
         key={`${course.id}-${course.visibility}-${course.pricing}-${course.coursePrice}-${course.discountedPrice}`}
         course={course}
       />
-      {(access || teacher) && (
+      {course.sequential && <CourseLearning course={course} />}
+      {course.pricing === "paid" && (
+        <StudentSubscriptions courseId={course.id} />
+      )}
+      {(access || teacher) && (!course.sequential || teacher) && (
         <div className="tabs" role="tablist" aria-label="Course views">
           {[
             "lessons",
@@ -535,7 +541,7 @@ export function CourseDetail({ id }: { id: string }) {
           ))}
         </div>
       )}
-      {tab === "lessons" && (
+      {tab === "lessons" && (!course.sequential || teacher) && (
         <>
           <SectionHeading
             title={access ? "Lessons" : "Preview lessons"}

@@ -1,3 +1,4 @@
+import { StructureEditor } from "../learning/StructureEditor";
 import { useEffect, useState } from "react";
 import { useWorkspace } from "../../../app/providers/OrgContextProvider";
 import { useScope } from "../../../shared/hooks/useScope";
@@ -84,9 +85,13 @@ function CourseEditForm({ course }: { course: Course }) {
           />
         )}
         <Notice>
-          Public courses are visible to students in this organization. In paid
-          courses, only lessons marked as free previews are available before
-          access is granted. Existing enrolled students keep full access.
+          Public courses are visible to students in this organization.{" "}
+          {course.sequential
+            ? "Sequential content requires enrollment and completion in order."
+            : "In library mode, paid courses can offer free preview lessons before access is granted."}{" "}
+          Directly assigned or purchased access is retained. Students enrolled
+          for free will need a purchase or active student subscription if this
+          course becomes paid.
         </Notice>
         {error && (
           <p role="alert" className="error-text">
@@ -143,6 +148,7 @@ export function CourseEdit({ id }: { id: string }) {
         description="Update course details, thumbnail, pricing, and access settings."
       />
       <CourseEditForm key={course.id} course={course} />
+      <StructureEditor course={course} />
       <div className="form-actions">
         <Button
           variant="danger"

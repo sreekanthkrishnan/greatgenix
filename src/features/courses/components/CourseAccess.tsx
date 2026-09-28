@@ -11,10 +11,29 @@ export function CourseAccess({ course }: { course: Course }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const access = hasCourseAccess(course, viewer);
-  if (access) return null;
+  const subscriptionOnly =
+    access &&
+    viewer.role === "student" &&
+    course.pricing === "paid" &&
+    !(course.directStudentIds ?? course.studentIds).includes(viewer.userId);
+  if (
+    (access && !subscriptionOnly) ||
+    (course.sequential && course.pricing !== "paid")
+  )
+    return null;
   return (
     <section className="panel course-enrollment">
-      <h2>Preview this course before purchasing</h2>
+      <h2>
+        {subscriptionOnly
+          ? "Subscription course access"
+          : "Preview this course before purchasing"}
+      </h2>
+      {subscriptionOnly && (
+        <p>
+          Your subscription grants access while active. Redeem a purchased
+          course coupon to retain access after subscription expiry.
+        </p>
+      )}
       <div className="course-enrollment-grid">
         <div>
           {course.pricing === "paid" && <CoursePricing course={course} />}

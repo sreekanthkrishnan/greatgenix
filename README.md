@@ -86,3 +86,9 @@ After confirming payment outside the platform, a course teacher or organization 
 This course access flow is separate from platform subscription coupons. It does not process or verify payments automatically. Access controls protect content served by the app; externally hosted public links remain governed by their hosting provider. The isolated `?demo=1` prototype retains its original behavior.
 
 Course ownership is assigned automatically to the signed-in creator (teacher or teacher-admin). Apply `supabase/migrations/202609250002_course_creator.sql` to enforce this on new course creation; existing ownership is preserved.
+
+## Sequential course learning
+
+Courses can now opt into ordered modules and learning items under **Edit course → Modules and sequential learning**. Existing courses stay in legacy library mode until explicitly activated. The new learning view supports enrollment, persistent per-student progress, resume, locked content, teacher-recorded participation, and video playback eligibility. Assessment submission unlocks progression independently of grading.
+
+Apply `supabase/migrations/202609260001_sequential_learning.sql` before deploying the updated frontend. Student subscriptions use administrator-confirmed offline payments and are separate from organization licensing; expiry preserves progress and purchased course access. See [course learning implementation](docs/course-learning-implementation.md) for migration behavior, access rules, video support, deployment dependencies, and validation scope.

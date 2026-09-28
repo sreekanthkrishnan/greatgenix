@@ -35,6 +35,9 @@ export type Org = {
   features: Record<Feature, boolean>;
 };
 export type Course = {
+  sequential?: boolean;
+  effectiveAccess?: boolean;
+  directStudentIds?: string[];
   thumbnailUrl?: string | null;
   visibility?: "private" | "public";
   pricing?: "free" | "paid";
@@ -151,9 +154,12 @@ export function canSeeCourse(course: Course, viewer: Viewer) {
 export function hasCourseAccess(course: Course, viewer: Viewer) {
   return (
     canSeeCourse(course, viewer) &&
-    (viewer.role !== "student" ||
-      course.studentIds.includes(viewer.userId) ||
-      (course.visibility === "public" && course.pricing !== "paid"))
+    (course.effectiveAccess ??
+      (viewer.role !== "student" ||
+        course.studentIds.includes(viewer.userId) ||
+        (course.visibility === "public" &&
+          course.pricing !== "paid" &&
+          !course.sequential)))
   );
 }
 export function available(

@@ -223,15 +223,21 @@ export function Recordings({ id }: { id?: string }) {
               </>
             ) : (
               <>
-                <Button
-                  disabled={busy}
-                  onClick={() => act({ type: "complete", id: lesson.id })}
-                >
-                  <CheckCircle2 size={17} />
-                  {lesson.completeBy.includes(viewer.userId)
-                    ? "Undo completion"
-                    : "Mark complete"}
-                </Button>
+                {course.sequential ? (
+                  <a className="button primary" href={`#/courses/${course.id}`}>
+                    Continue in learning path
+                  </a>
+                ) : (
+                  <Button
+                    disabled={busy}
+                    onClick={() => act({ type: "complete", id: lesson.id })}
+                  >
+                    <CheckCircle2 size={17} />
+                    {lesson.completeBy.includes(viewer.userId)
+                      ? "Undo completion"
+                      : "Mark complete"}
+                  </Button>
+                )}
                 <Button variant="ghost" onClick={() => setReport(true)}>
                   Report content
                 </Button>

@@ -25,6 +25,7 @@ export async function loadWorkspace(orgId: string): Promise<WorkspaceState> {
     attendance,
     reports,
     completions,
+    entitlements,
   ] = await Promise.all([
     readScoped("courses", orgId),
     readScoped("memberships", orgId),
@@ -36,12 +37,19 @@ export async function loadWorkspace(orgId: string): Promise<WorkspaceState> {
     readScoped("attendance", orgId),
     readScoped("reports", orgId),
     readScoped("completions", orgId),
+    rpc<{ id: string; access: boolean }[]>("learning_entitlements", {
+      p_org: orgId,
+    }),
   ]);
   return {
     version: 1,
     orgs: [],
     courses: courses.map((c) => ({
       ...c,
+      effectiveAccess: entitlements?.find((e) => e.id === c.id)?.access,
+      directStudentIds: enrollments
+        .filter((e) => e.courseId === c.id && e.source !== "self")
+        .map((e) => e.studentId),
       studentIds: enrollments
         .filter((e) => e.courseId === c.id)
         .map((e) => e.studentId),

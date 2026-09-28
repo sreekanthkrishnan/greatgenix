@@ -3259,3 +3259,23 @@ button.topbar-profile:hover, button.topbar-profile[aria-expanded="true"] { backg
   .course-enrollment { padding: 16px; }
   .course-enrollment-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
 }
+
+.learning-path { margin-block: 24px; }
+.learning-path progress { width: 100%; margin-bottom: 18px; accent-color: var(--green); }
+.learning-columns { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr); gap: 28px; margin-top: 24px; }
+.learning-module { padding: 18px; border: 1px solid var(--border, #dce3d9); border-radius: 12px; margin-block: 12px; min-width: 0; }
+.learning-module h3 { margin-bottom: 8px; }
+.learning-module ol { padding-left: 22px; }
+.learning-module li { margin-block: 10px; }
+.learning-module li button { text-align: left; width: 100%; padding: 10px; border: 1px solid transparent; background: transparent; border-radius: 8px; color: inherit; cursor: pointer; }
+.learning-module li button[aria-current] { background: #edf2e8; border-color: #a8b99e; }
+.learning-module li button:disabled { opacity: .55; cursor: not-allowed; }
+.learning-module li span { display: block; font-size: 12px; margin-top: 5px; }
+.learning-content { min-width: 0; }
+.learning-content p { margin-block: 14px; }
+.learning-playback video { width: 100%; background: #111; border-radius: 12px; }
+.learning-editor-item { padding: 18px; margin-block: 16px; border: 1px solid #dce3d9; border-radius: 8px; min-width: 0; }
+@media (max-width: 800px) { .learning-columns { grid-template-columns: 1fr; } }
+.learning-editor .form-actions { flex-wrap: wrap; justify-content: flex-start; }
+.learning-path .button, .learning-editor .button, .student-subscriptions .button { max-width: 100%; white-space: normal; }
+.learning-path, .learning-editor, .student-subscriptions { overflow-wrap: anywhere; }

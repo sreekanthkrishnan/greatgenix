@@ -25,6 +25,7 @@ export function CourseRoster({ course }: { course: Course }) {
     queryKey: ["course-coupons", viewer.orgId, course.id],
     queryFn: () => accessCoupons(viewer.orgId, course.id),
   });
+  const directIds = course.directStudentIds ?? course.studentIds;
   const paid = course.visibility === "public" && course.pricing === "paid";
   async function issue(studentId: string, name: string) {
     setWorking(true);
@@ -51,7 +52,9 @@ export function CourseRoster({ course }: { course: Course }) {
         {paid
           ? "Confirm the student’s manual payment before granting full access or creating a coupon. Each coupon is valid for seven days and only the selected student can redeem it once. Creating another replaces their previous coupon."
           : course.visibility === "public"
-            ? "All active students in this organization already have access. Enrollment adds them to the class roster."
+            ? course.sequential
+              ? "Students enroll to begin the learning path. You can also enroll students below."
+              : "All active students in this organization already have access. Enrollment adds them to the class roster."
             : "Add existing organization students below, or invite a new learner to this course."}
       </Notice>
       {issued && (
@@ -117,7 +120,32 @@ export function CourseRoster({ course }: { course: Course }) {
                   ? "Payment confirmed — grant access"
                   : "Enroll in course"}
             </Button>
-            {paid && !course.studentIds.includes(m.id) && (
+            {(paid || course.visibility === "private") &&
+              course.studentIds.includes(m.id) &&
+              !directIds.includes(m.id) && (
+                <Button
+                  variant="secondary"
+                  disabled={busy || working}
+                  onClick={() =>
+                    act(
+                      {
+                        type: "enroll",
+                        courseId: course.id,
+                        studentId: m.id,
+                        enrolled: true,
+                      },
+                      paid
+                        ? "Purchased course access granted."
+                        : "Private course assigned.",
+                    )
+                  }
+                >
+                  {paid
+                    ? "Payment confirmed — grant purchased access"
+                    : "Assign private course"}
+                </Button>
+              )}
+            {paid && !directIds.includes(m.id) && (
               <Button
                 disabled={busy || working}
                 variant="secondary"
