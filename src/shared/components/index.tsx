@@ -261,13 +261,42 @@ export function Modal({
   close: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const startedOutside = useRef(false);
+  const isOutside = (event: React.MouseEvent<HTMLDialogElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return (
+      event.target === event.currentTarget &&
+      (event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom)
+    );
+  };
   useEffect(() => {
     const dialog = ref.current;
     dialog?.showModal();
     return () => dialog?.close();
   }, []);
   return (
-    <dialog ref={ref} className="modal" onCancel={close}>
+    <dialog
+      ref={ref}
+      className="modal"
+      onCancel={(event) => {
+        // File inputs also emit cancel when their picker is dismissed.
+        if (event.target === event.currentTarget) close();
+      }}
+      onPointerDown={(event) => {
+        startedOutside.current = isOutside(event);
+      }}
+      onPointerCancel={() => {
+        startedOutside.current = false;
+      }}
+      onClick={(event) => {
+        const shouldClose = startedOutside.current && isOutside(event);
+        startedOutside.current = false;
+        if (shouldClose) close();
+      }}
+    >
       <div className="modal-heading">
         <div>
           <h2>{title}</h2>

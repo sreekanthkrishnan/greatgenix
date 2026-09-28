@@ -168,12 +168,22 @@ test("lesson republishing and typed references survive reload", async ({
   await page.getByRole("button", { name: "Add reference" }).click();
   await page.getByLabel("Reference type").selectOption("document");
   await page.getByLabel("Reference title").fill("Worksheet");
+  await page.getByLabel("Upload reference document").dispatchEvent("cancel", {
+    bubbles: true,
+  });
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByLabel("Reference title")).toHaveValue("Worksheet");
   await page.getByLabel("Upload reference document").setInputFiles({
     name: "worksheet.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("Solve x + 2 = 4"),
   });
   await page.getByRole("button", { name: "Save reference" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Add reference" }).click();
+  await page.getByRole("heading", { name: "Add lesson reference" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.mouse.click(1, 1);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.reload();
   await expect(page.locator(".reference-card")).toHaveCount(3);
